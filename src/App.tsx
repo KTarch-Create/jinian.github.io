@@ -18,6 +18,8 @@ declare global {
     Email: {
       send: (config: {
         Host: string;
+        Port?: number;
+        Secure?: boolean;
         Username: string;
         Password: string;
         To: string;
@@ -2419,6 +2421,8 @@ export default function App() {
                                 try {
                                   await window.Email.send({
                                     Host: "smtp.qq.com",
+                                    Port: 465,
+                                    Secure: true,
                                     Username: smtpEmail,
                                     Password: smtpPassword,
                                     To: smtpEmail,
