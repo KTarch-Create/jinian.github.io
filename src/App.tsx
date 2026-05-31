@@ -2345,7 +2345,7 @@ export default function App() {
                           <ol className="text-[9px] text-white/50 space-y-1 mt-2 pl-4 list-decimal">
                             <li>打开 <a href="https://www.emailjs.com" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">emailjs.com</a> 免费注册</li>
                             <li>添加 Email Service → 选 QQ Mail → 填入 {ADMIN_EMAIL} 和 SMTP 授权码</li>
-                            <li>添加 Email Template → 创建变量 <code className="text-indigo-300 bg-white/5 px-1 rounded">{'{{verification_code}}'}</code></li>
+                            <li>添加 Email Template → 创建变量 <code className="text-indigo-300 bg-white/5 px-1 rounded">{'{{passcode}}'}</code> 和 <code className="text-indigo-300 bg-white/5 px-1 rounded">{'{{time}}'}</code></li>
                           </ol>
                           <details className="text-[9px] text-white/40 mt-3">
                             <summary className="cursor-pointer text-indigo-400 hover:text-indigo-300">如何获取 QQ 邮箱 SMTP 授权码？</summary>
@@ -2404,7 +2404,11 @@ export default function App() {
                               setSecurityStatus('sending');
                               const code = generateCode();
                               try {
-                                await emailjs.send(emailjsServiceId, emailjsTemplateId, { to_email: ADMIN_EMAIL, verification_code: code }, emailjsPublicKey);
+                                await emailjs.send(emailjsServiceId, emailjsTemplateId, {
+                                  to_email: ADMIN_EMAIL,
+                                  passcode: code,
+                                  time: new Date(Date.now() + 15 * 60 * 1000).toLocaleString('zh-CN', { hour12: false }),
+                                }, emailjsPublicKey);
                                 setSentCode(code); setCodeSent(true); setSecurityStatus('sent'); setSecurityMessage('✓ 验证码已发送到邮箱，请查收');
                                 setTimeout(() => setSecurityStatus(''), 3000);
                               } catch (err) { setSecurityStatus('error'); setSecurityMessage('✗ 发送失败：' + (err?.text || '请检查配置')); }
