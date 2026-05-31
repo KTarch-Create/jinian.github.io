@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import { fetchMessages, saveMessages, listBackups, createBackup, getBackupContent } from './guestbook.ts';
 import { fetchTexts, saveTexts, defaultTexts } from './siteTexts.ts';
 import { hashPassword, fetchAdminConfig, saveAdminConfig, generateCode } from './adminConfig.ts';
-import emailjs from '@emailjs/browser';
 
 // 防御性注入：显式地将 React、ReactDOM 以及 tailwind 挂载到全局 window 对象上
 // 这能彻底解决沙箱在延迟加载或编译测试脚本时，因找不到全局宿主对象而引发的 ReferenceError 报错
@@ -11,6 +10,23 @@ if (typeof window !== 'undefined') {
   window.React = React;
   window.ReactDOM = window.ReactDOM || ReactDOM;
   window.tailwind = window.tailwind || { config: {} };
+}
+
+// SMTP.JS 类型声明
+declare global {
+  interface Window {
+    Email: {
+      send: (config: {
+        Host: string;
+        Username: string;
+        Password: string;
+        To: string;
+        From: string;
+        Subject: string;
+        Body: string;
+      }) => Promise<string>;
+    };
+  }
 }
 
 // ================= 替代 lucide-react 的轻量级原生 SVG 图标组件 =================
@@ -779,11 +795,9 @@ export default function App() {
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [securityStatus, setSecurityStatus] = useState(''); // '' | 'sending' | 'sent' | 'verified' | 'error' | 'saved'
   const [securityMessage, setSecurityMessage] = useState('');
-  // EmailJS 配置（用户填写）
-  const [emailjsServiceId, setEmailjsServiceId] = useState('');
-  const [emailjsTemplateId, setEmailjsTemplateId] = useState('');
-  const [emailjsPublicKey, setEmailjsPublicKey] = useState('');
-  const [showEmailSetup, setShowEmailSetup] = useState(false);
+  // QQ邮箱 SMTP 配置
+  const [smtpEmail, setSmtpEmail] = useState('');      // QQ邮箱地址
+  const [smtpPassword, setSmtpPassword] = useState(''); // SMTP授权码
 
   const revealRefs = useRef([]);
   const audioRef = useRef(null);
@@ -932,9 +946,8 @@ export default function App() {
     fetchAdminConfig().then(cfg => {
       setStoredPasswordHash(cfg.passwordHash);
       if (cfg.adminEmail) setSecurityEmail(cfg.adminEmail);
-      if (cfg.emailjsServiceId) setEmailjsServiceId(cfg.emailjsServiceId);
-      if (cfg.emailjsTemplateId) setEmailjsTemplateId(cfg.emailjsTemplateId);
-      if (cfg.emailjsPublicKey) setEmailjsPublicKey(cfg.emailjsPublicKey);
+      if (cfg.smtpEmail) setSmtpEmail(cfg.smtpEmail);
+      if (cfg.smtpPassword) setSmtpPassword(cfg.smtpPassword);
       setIsLoadingConfig(false);
     });
   }, []);
@@ -2339,198 +2352,196 @@ export default function App() {
 
                   {adminTab === 'security' && (
                     <div className="space-y-4 font-ui">
-                      {/* EmailJS 首次配置提示 */}
-                      {!showEmailSetup && !emailjsPublicKey && (
+                      {/* QQ邮箱 SMTP 配置说明 */}
+                      {!smtpEmail && (
                         <div className="border border-amber-500/30 bg-amber-950/10 rounded-xl p-4">
                           <p className="text-[10px] text-amber-200/80 tracking-wide mb-3">
-                            首次使用需要配置 EmailJS 来发送验证码。请先免费注册 <a href="https://www.emailjs.com" target="_blank" rel="noopener noreferrer" className="underline text-indigo-400">emailjs.com</a>，创建一个 Service 和 Email Template，然后填入以下信息。
+                            配置 QQ 邮箱 SMTP 即可发送验证码。需要先获取 QQ 邮箱的 <strong className="text-white">SMTP 授权码</strong>（不是 QQ 密码）。
                           </p>
-                          <button onClick={() => setShowEmailSetup(true)} className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-[9px] tracking-widest rounded-lg transition-all text-white select-none">
-                            配置 EmailJS
+                          <details className="text-[9px] text-white/40 mt-2">
+                            <summary className="cursor-pointer text-indigo-400 hover:text-indigo-300">如何获取 QQ 邮箱 SMTP 授权码？</summary>
+                            <div className="mt-2 space-y-1 pl-2 border-l border-white/10">
+                              <p>1. 登录 QQ 邮箱 → 设置 → 帐户</p>
+                              <p>2. 找到 "POP3/IMAP/SMTP服务"</p>
+                              <p>3. 开启 "POP3/SMTP服务"</p>
+                              <p>4. 按提示发送短信获取授权码（16位）</p>
+                              <p>5. 复制授权码填入下方</p>
+                            </div>
+                          </details>
+                        </div>
+                      )}
+
+                      {/* SMTP 配置面板 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic">📧 QQ邮箱 SMTP 配置</h4>
+                          <button onClick={async () => {
+                            const cfg = await fetchAdminConfig();
+                            const updated = { ...cfg, smtpEmail, smtpPassword };
+                            const ok = await saveAdminConfig(updated);
+                            setSecurityStatus(ok ? 'saved' : 'error');
+                            setSecurityMessage(ok ? '✓ SMTP 配置已保存' : '✗ 保存失败');
+                            setTimeout(() => setSecurityStatus(''), 3000);
+                          }} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-[9px] tracking-widest rounded-lg text-white select-none">
+                            保存配置
                           </button>
                         </div>
-                      )}
-
-                      {/* EmailJS 配置面板 */}
-                      {(showEmailSetup || emailjsPublicKey) && (
-                        <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic">📧 EmailJS 配置</h4>
-                            <button onClick={async () => {
-                              const cfg = await fetchAdminConfig();
-                              const updated = { ...cfg, emailjsServiceId, emailjsTemplateId, emailjsPublicKey };
-                              const ok = await saveAdminConfig(updated);
-                              setSecurityStatus(ok ? 'saved' : 'error');
-                              setSecurityMessage(ok ? '✓ EmailJS 配置已保存' : '✗ 保存失败');
-                              setTimeout(() => setSecurityStatus(''), 3000);
-                            }} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-[9px] tracking-widest rounded-lg text-white select-none">
-                              保存配置
-                            </button>
+                        <div className="space-y-2">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] text-white/40">QQ 邮箱地址</label>
+                            <input type="email" value={smtpEmail} onChange={e => setSmtpEmail(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="yourname@qq.com" />
                           </div>
-                          <div className="space-y-2">
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] text-white/40">Service ID (如: service_xxx)</label>
-                              <input type="text" value={emailjsServiceId} onChange={e => setEmailjsServiceId(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="service_xxx" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] text-white/40">Template ID (如: template_xxx)</label>
-                              <input type="text" value={emailjsTemplateId} onChange={e => setEmailjsTemplateId(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="template_xxx" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] text-white/40">Public Key (User ID)</label>
-                              <input type="text" value={emailjsPublicKey} onChange={e => setEmailjsPublicKey(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="xxx" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[9px] text-white/40">管理员邮箱（接收验证码）</label>
-                              <input type="email" value={securityEmail} onChange={e => setSecurityEmail(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="your@email.com" />
-                            </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] text-white/40">SMTP 授权码（16位）</label>
+                            <input type="password" value={smtpPassword} onChange={e => setSmtpPassword(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="16位授权码" />
                           </div>
                         </div>
-                      )}
+                      </div>
 
                       {/* 修改密码区域 */}
-                      {emailjsPublicKey && (
-                        <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
-                          <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">🔑 修改管理员密码</h4>
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                        <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">🔑 修改管理员密码</h4>
 
-                          {/* 步骤1: 发送验证码 */}
-                          {!codeSent && !codeVerified && (
-                            <div className="space-y-3">
-                              <p className="text-[9px] text-white/40">验证码将发送到您配置的管理员邮箱：{securityEmail || '请先配置邮箱'}</p>
-                              <button
-                                onClick={async () => {
-                                  if (!securityEmail || !emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey) {
-                                    setSecurityStatus('error');
-                                    setSecurityMessage('✗ 请先完善 EmailJS 配置和管理员邮箱');
-                                    setTimeout(() => setSecurityStatus(''), 3000);
-                                    return;
-                                  }
-                                  setSecurityStatus('sending');
-                                  const code = generateCode();
-                                  try {
-                                    await emailjs.send(emailjsServiceId, emailjsTemplateId, {
-                                      to_email: securityEmail,
-                                      verification_code: code,
-                                      subject: '记忆画廊 - 管理员密码修改验证码',
-                                    }, emailjsPublicKey);
-                                    setSentCode(code);
-                                    setCodeSent(true);
-                                    setSecurityStatus('sent');
-                                    setSecurityMessage('✓ 验证码已发送到邮箱，请查收');
-                                    setTimeout(() => setSecurityStatus(''), 3000);
-                                  } catch (err) {
-                                    setSecurityStatus('error');
-                                    setSecurityMessage('✗ 验证码发送失败：' + (err?.text || err?.message || '未知错误'));
-                                  }
-                                }}
-                                disabled={securityStatus === 'sending' || !securityEmail}
-                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
-                              >
-                                {securityStatus === 'sending' ? '发送中...' : '发送验证码'}
-                              </button>
+                        {/* 步骤1: 发送验证码 */}
+                        {!codeSent && !codeVerified && (
+                          <div className="space-y-3">
+                            <p className="text-[9px] text-white/40">验证码将发送到 SMTP 配置的邮箱：{smtpEmail || '请先配置 QQ 邮箱 SMTP'}</p>
+                            <button
+                              onClick={async () => {
+                                if (!smtpEmail || !smtpPassword) {
+                                  setSecurityStatus('error');
+                                  setSecurityMessage('✗ 请先配置 QQ 邮箱 SMTP');
+                                  setTimeout(() => setSecurityStatus(''), 3000);
+                                  return;
+                                }
+                                setSecurityStatus('sending');
+                                const code = generateCode();
+                                try {
+                                  await window.Email.send({
+                                    Host: "smtp.qq.com",
+                                    Username: smtpEmail,
+                                    Password: smtpPassword,
+                                    To: smtpEmail,
+                                    From: smtpEmail,
+                                    Subject: '记忆画廊 - 管理员密码修改验证码',
+                                    Body: `您的验证码是：${code}\n\n验证码有效期为 10 分钟，请勿泄露给他人。`,
+                                  });
+                                  setSentCode(code);
+                                  setCodeSent(true);
+                                  setSecurityStatus('sent');
+                                  setSecurityMessage('✓ 验证码已发送到 QQ 邮箱，请查收');
+                                  setTimeout(() => setSecurityStatus(''), 3000);
+                                } catch (err) {
+                                  setSecurityStatus('error');
+                                  setSecurityMessage('✗ 验证码发送失败，请检查 SMTP 配置是否正确');
+                                }
+                              }}
+                              disabled={securityStatus === 'sending' || !smtpEmail}
+                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
+                            >
+                              {securityStatus === 'sending' ? '发送中...' : '发送验证码'}
+                            </button>
+                          </div>
+                        )}
+
+                        {/* 步骤2: 输入验证码 */}
+                        {codeSent && !codeVerified && (
+                          <div className="space-y-3">
+                            <p className="text-[9px] text-green-400">✓ 验证码已发送至 {smtpEmail}</p>
+                            <div className="flex gap-2 items-end">
+                              <div className="flex-1 flex flex-col gap-1">
+                                <label className="text-[9px] text-white/40">输入 6 位验证码</label>
+                                <input type="text" maxLength="6" value={verificationCode} onChange={e => setVerificationCode(e.target.value.replace(/\D/g, ''))} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40 text-center tracking-[0.5em]" placeholder="000000" />
+                              </div>
+                              <button onClick={() => {
+                                setCodeSent(false);
+                                setVerificationCode('');
+                                setSecurityStatus('');
+                              }} className="px-3 py-2 bg-white/5 hover:bg-white/10 text-[9px] rounded text-white/60 select-none">重新发送</button>
                             </div>
-                          )}
+                            <button
+                              onClick={() => {
+                                if (verificationCode === sentCode) {
+                                  setCodeVerified(true);
+                                  setSecurityStatus('verified');
+                                  setSecurityMessage('✓ 验证码验证通过，请设置新密码');
+                                  setTimeout(() => setSecurityStatus(''), 3000);
+                                } else {
+                                  setSecurityStatus('error');
+                                  setSecurityMessage('✗ 验证码错误，请重新输入');
+                                }
+                              }}
+                              disabled={verificationCode.length < 6}
+                              className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
+                            >
+                              验证
+                            </button>
+                          </div>
+                        )}
 
-                          {/* 步骤2: 输入验证码 */}
-                          {codeSent && !codeVerified && (
-                            <div className="space-y-3">
-                              <p className="text-[9px] text-green-400">✓ 验证码已发送至 {securityEmail}</p>
-                              <div className="flex gap-2 items-end">
-                                <div className="flex-1 flex flex-col gap-1">
-                                  <label className="text-[9px] text-white/40">输入 6 位验证码</label>
-                                  <input type="text" maxLength="6" value={verificationCode} onChange={e => setVerificationCode(e.target.value.replace(/\D/g, ''))} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40 text-center tracking-[0.5em]" placeholder="000000" />
-                                </div>
-                                <button onClick={() => {
-                                  setCodeSent(false);
+                        {/* 步骤3: 设置新密码 */}
+                        {codeVerified && (
+                          <div className="space-y-3 border-t border-white/5 pt-4">
+                            <p className="text-[9px] text-green-400">✓ 邮箱验证通过，请输入新密码</p>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] text-white/40">新密码</label>
+                              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="输入新密码" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] text-white/40">确认新密码</label>
+                              <input type="password" value={newPasswordConfirm} onChange={e => setNewPasswordConfirm(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="再次输入新密码" />
+                            </div>
+                            {newPassword && newPasswordConfirm && newPassword !== newPasswordConfirm && (
+                              <p className="text-[9px] text-red-400">✗ 两次密码不一致</p>
+                            )}
+                            <button
+                              onClick={async () => {
+                                if (newPassword.length < 4) {
+                                  setSecurityStatus('error');
+                                  setSecurityMessage('✗ 密码至少 4 位');
+                                  return;
+                                }
+                                if (newPassword !== newPasswordConfirm) {
+                                  setSecurityStatus('error');
+                                  setSecurityMessage('✗ 两次密码不一致');
+                                  return;
+                                }
+                                setSecurityStatus('sending');
+                                const hash = await hashPassword(newPassword);
+                                const cfg = await fetchAdminConfig();
+                                const updated = { ...cfg, passwordHash: hash, smtpEmail, smtpPassword };
+                                const ok = await saveAdminConfig(updated);
+                                if (ok) {
+                                  setStoredPasswordHash(hash);
+                                  setSecurityStatus('saved');
+                                  setSecurityMessage('✓ 密码已成功修改！');
+                                  setNewPassword('');
+                                  setNewPasswordConfirm('');
                                   setVerificationCode('');
-                                  setSecurityStatus('');
-                                }} className="px-3 py-2 bg-white/5 hover:bg-white/10 text-[9px] rounded text-white/60 select-none">重新发送</button>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  if (verificationCode === sentCode) {
-                                    setCodeVerified(true);
-                                    setSecurityStatus('verified');
-                                    setSecurityMessage('✓ 验证码验证通过，请设置新密码');
-                                    setTimeout(() => setSecurityStatus(''), 3000);
-                                  } else {
-                                    setSecurityStatus('error');
-                                    setSecurityMessage('✗ 验证码错误，请重新输入');
-                                  }
-                                }}
-                                disabled={verificationCode.length < 6}
-                                className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
-                              >
-                                验证
-                              </button>
-                            </div>
-                          )}
+                                  setSentCode('');
+                                  setCodeSent(false);
+                                  setCodeVerified(false);
+                                } else {
+                                  setSecurityStatus('error');
+                                  setSecurityMessage('✗ 密码保存到 GitHub 失败，请重试');
+                                }
+                                setTimeout(() => setSecurityStatus(''), 4000);
+                              }}
+                              disabled={!newPassword || !newPasswordConfirm || newPassword !== newPasswordConfirm || securityStatus === 'sending'}
+                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
+                            >
+                              {securityStatus === 'sending' ? '保存中...' : '确认修改密码'}
+                            </button>
+                          </div>
+                        )}
 
-                          {/* 步骤3: 设置新密码 */}
-                          {codeVerified && (
-                            <div className="space-y-3 border-t border-white/5 pt-4">
-                              <p className="text-[9px] text-green-400">✓ 邮箱验证通过，请输入新密码</p>
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] text-white/40">新密码</label>
-                                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="输入新密码" />
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] text-white/40">确认新密码</label>
-                                <input type="password" value={newPasswordConfirm} onChange={e => setNewPasswordConfirm(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="再次输入新密码" />
-                              </div>
-                              {newPassword && newPasswordConfirm && newPassword !== newPasswordConfirm && (
-                                <p className="text-[9px] text-red-400">✗ 两次密码不一致</p>
-                              )}
-                              <button
-                                onClick={async () => {
-                                  if (newPassword.length < 4) {
-                                    setSecurityStatus('error');
-                                    setSecurityMessage('✗ 密码至少 4 位');
-                                    return;
-                                  }
-                                  if (newPassword !== newPasswordConfirm) {
-                                    setSecurityStatus('error');
-                                    setSecurityMessage('✗ 两次密码不一致');
-                                    return;
-                                  }
-                                  setSecurityStatus('sending');
-                                  const hash = await hashPassword(newPassword);
-                                  const cfg = await fetchAdminConfig();
-                                  const updated = { ...cfg, passwordHash: hash, adminEmail: securityEmail, emailjsServiceId, emailjsTemplateId, emailjsPublicKey };
-                                  const ok = await saveAdminConfig(updated);
-                                  if (ok) {
-                                    setStoredPasswordHash(hash);
-                                    setSecurityStatus('saved');
-                                    setSecurityMessage('✓ 密码已成功修改！');
-                                    // 重置状态
-                                    setNewPassword('');
-                                    setNewPasswordConfirm('');
-                                    setVerificationCode('');
-                                    setSentCode('');
-                                    setCodeSent(false);
-                                    setCodeVerified(false);
-                                  } else {
-                                    setSecurityStatus('error');
-                                    setSecurityMessage('✗ 密码保存到 GitHub 失败，请重试');
-                                  }
-                                  setTimeout(() => setSecurityStatus(''), 4000);
-                                }}
-                                disabled={!newPassword || !newPasswordConfirm || newPassword !== newPasswordConfirm || securityStatus === 'sending'}
-                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
-                              >
-                                {securityStatus === 'sending' ? '保存中...' : '确认修改密码'}
-                              </button>
-                            </div>
-                          )}
-
-                          {/* 状态消息 */}
-                          {securityMessage && (
-                            <p className={`mt-3 text-[9px] tracking-wide ${securityStatus === 'error' || securityStatus === 'failed' ? 'text-red-400' : 'text-green-400'}`}>
-                              {securityMessage}
-                            </p>
-                          )}
-                        </div>
-                      )}
+                        {/* 状态消息 */}
+                        {securityMessage && (
+                          <p className={`mt-3 text-[9px] tracking-wide ${securityStatus === 'error' || securityStatus === 'failed' ? 'text-red-400' : 'text-green-400'}`}>
+                            {securityMessage}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
 

@@ -65,7 +65,8 @@ export async function hashPassword(password) {
 // 管理员配置默认值
 const defaultConfig = {
   passwordHash: null, // null 表示使用默认密码 ktarch666
-  adminEmail: ''
+  smtpEmail: '',
+  smtpPassword: ''
 };
 
 // 从 GitHub 读取管理配置
