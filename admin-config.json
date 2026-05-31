@@ -1,5 +1,8 @@
 {
   "passwordHash": null,
   "smtpEmail": "194085683@qq.com",
-  "smtpPassword": "hdnvzrpwgsgcbhhg"
+  "smtpPassword": "hdnvzrpwgsgcbhhg",
+  "emailjsServiceId": "service_9ano7ll",
+  "emailjsTemplateId": "template_kiq07hr",
+  "emailjsPublicKey": "uFL7uIDNxe_iLR-ab"
 }
