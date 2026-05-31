@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import { fetchMessages, saveMessages, listBackups, createBackup, getBackupContent } from './guestbook.ts';
 
 // 防御性注入：显式地将 React、ReactDOM 以及 tailwind 挂载到全局 window 对象上
 // 这能彻底解决沙箱在延迟加载或编译测试脚本时，因找不到全局宿主对象而引发的 ReferenceError 报错
@@ -375,8 +376,8 @@ function ParticleLyrics({ text }) {
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [bgImageError, setBgImageError] = useState(false);
   const [isStoryOpen, setIsStoryOpen] = useState(false); // 故事弹窗控制状态
+
 
   // 管理员后台核心控制状态
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -393,11 +394,9 @@ export default function App() {
   const [activeSongIndex, setActiveSongIndex] = useState(0);
   const [showMiniPlaylist, setShowMiniPlaylist] = useState(false); // 控制主页面迷你播放列表面板显隐
   const [currentTime, setCurrentTime] = useState(0);
+  const [isMusicVisible, setIsMusicVisible] = useState(true); // 音乐组件显隐控制
 
-  // 歌词自由拖拽浮动位移状态 (使用相对偏移量 offset，适配鼠标和触屏)
-  const [lyricOffset, setLyricOffset] = useState({ x: 0, y: 0 });
-  const isDraggingLyric = useRef(false);
-  const dragLyricStart = useRef({ x: 0, y: 0 });
+  // 歌词位置固定，不可拖动
 
   // 1. 核心大画廊数据 state (本地持久化)
   const [galleryItems, setGalleryItems] = useState(() => {
@@ -730,6 +729,12 @@ export default function App() {
   const [content, setContent] = useState('');
   const [formError, setFormError] = useState({ name: false, text: false });
 
+  // 留言板备份 & 回到顶部状态
+  const [backups, setBackups] = useState([]);
+  const [backupStatus, setBackupStatus] = useState(''); // '' | 'loading' | 'created' | 'no_changes' | 'failed'
+  const [restoreConfirm, setRestoreConfirm] = useState(null); // { name, messages, time } | null
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
   const revealRefs = useRef([]);
   const audioRef = useRef(null);
 
@@ -771,27 +776,36 @@ export default function App() {
       }
     }
 
-    const localMsgs = localStorage.getItem('mc_gallery_messages');
-    if (localMsgs) {
-      setMessages(JSON.parse(localMsgs));
-    } else {
-      const defaultMsgs = [
-        {
-          id: 101,
-          name: "季风过境",
-          text: "静静地看着雪花在雪山之巅上飞舞，听着轻柔的音乐，那一刻时空好像完全凝固了。摄影和音乐果然是人类打捞记忆最温柔的网，KTarch，期待未来更多的闪光！",
-          time: "2026-05-24 19:42"
-        },
-        {
-          id: 102,
-          name: "未完待续",
-          text: "在钢铁森林里生活久了，总是忘记倾听自己灵魂深处的声音。谢谢这些细腻的镜头瞬间，在这个寒冷冬天里给我带来了一份难得的温暖。",
-          time: "2026-05-28 09:15"
-        }
-      ];
-      setMessages(defaultMsgs);
-      localStorage.setItem('mc_gallery_messages', JSON.stringify(defaultMsgs));
-    }
+    // 从 GitHub 加载留言（所有用户共享）
+    fetchMessages().then(msgs => {
+      if (msgs.length > 0) {
+        setMessages(msgs);
+      } else {
+        const defaultMsgs = [
+          {
+            id: 101,
+            name: "季风过境",
+            text: "静静地看着雪花在雪山之巅上飞舞，听着轻柔的音乐，那一刻时空好像完全凝固了。摄影和音乐果然是人类打捞记忆最温柔的网，KTarch，期待未来更多的闪光！",
+            time: "2026-05-24 19:42"
+          },
+          {
+            id: 102,
+            name: "未完待续",
+            text: "在钢铁森林里生活久了，总是忘记倾听自己灵魂深处的声音。谢谢这些细腻的镜头瞬间，在这个寒冷冬天里给我带来了一份难得的温暖。",
+            time: "2026-05-28 09:15"
+          }
+        ];
+        setMessages(defaultMsgs);
+        saveMessages(defaultMsgs);
+      }
+    })
+
+    // 每 30 秒自动刷新留言（其他用户新留言会自动出现）
+    const refreshInterval = setInterval(() => {
+      fetchMessages().then(msgs => {
+        if (msgs.length > 0) setMessages(msgs);
+      });
+    }, 30000);
 
     // 初始化滚动检测机制
     const observerOptions = {
@@ -817,6 +831,7 @@ export default function App() {
     return () => {
       observer.disconnect();
       clearTimeout(timer);
+      clearInterval(refreshInterval);
     };
   }, []);
 
@@ -848,6 +863,22 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightbox]);
+
+  // 滚动监听：控制回到顶部按钮显隐
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 600);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // 进入留言审核标签时自动加载备份列表
+  useEffect(() => {
+    if (isAdminAuthenticated && adminTab === 'guestbook') {
+      listBackups().then(setBackups);
+    }
+  }, [isAdminAuthenticated, adminTab]);
 
   // 计算当前正在播出的歌词内容
   const getActiveLyricText = () => {
@@ -906,7 +937,10 @@ export default function App() {
 
     const updatedMsgs = [newMsg, ...messages];
     setMessages(updatedMsgs);
-    localStorage.setItem('mc_gallery_messages', JSON.stringify(updatedMsgs));
+    // 异步保存到 GitHub，失败时不影响本地显示
+    saveMessages(updatedMsgs).then(ok => {
+      if (!ok) console.warn('留言已本地保存，但同步到 GitHub 失败');
+    });
 
     setNickname('');
     setContent('');
@@ -965,54 +999,6 @@ export default function App() {
   };
 
   const previewData = getActivePreviewData();
-
-  // ================= 拖拽歌词面板处理生命周期 (双触适配) =================
-  const handleDragStart = (e) => {
-    if (e.target.closest('button')) return;
-    isDraggingLyric.current = true;
-
-    const clientX = e.clientX || e.touches?.[0]?.clientX;
-    const clientY = e.clientY || e.touches?.[0]?.clientY;
-
-    dragLyricStart.current = {
-      x: clientX - lyricOffset.x,
-      y: clientY - lyricOffset.y
-    };
-
-    if (e.type === 'touchstart') {
-      document.addEventListener('touchmove', handleDragMove, { passive: false });
-      document.addEventListener('touchend', handleDragEnd);
-    } else {
-      document.addEventListener('mousemove', handleDragMove);
-      document.addEventListener('mouseup', handleDragEnd);
-    }
-  };
-
-  const handleDragMove = (e) => {
-    if (!isDraggingLyric.current) return;
-
-    const clientX = e.clientX || e.touches?.[0]?.clientX;
-    const clientY = e.clientY || e.touches?.[0]?.clientY;
-
-    const newX = clientX - dragLyricStart.current.x;
-    const newY = clientY - dragLyricStart.current.y;
-
-    setLyricOffset({ x: newX, y: newY });
-
-    if (e.type === 'touchmove') {
-      e.preventDefault();
-    }
-  };
-
-  const handleDragEnd = () => {
-    isDraggingLyric.current = false;
-    document.removeEventListener('mousemove', handleDragMove);
-    document.removeEventListener('mouseup', handleDragEnd);
-    document.removeEventListener('touchmove', handleDragMove);
-    document.removeEventListener('touchend', handleDragEnd);
-  };
-
-  // ================= 管理员后台控制控制面板接口 =================
   const handleAdminLogin = (e) => {
     e.preventDefault();
     if (adminPassword === 'ktarch666') {
@@ -1089,7 +1075,7 @@ export default function App() {
   const deleteGuestMessage = (id) => {
     const updated = messages.filter(item => item.id !== id);
     setMessages(updated);
-    localStorage.setItem('mc_gallery_messages', JSON.stringify(updated));
+    saveMessages(updated);
   };
 
   const [newSongTitle, setNewSongTitle] = useState('');
@@ -1261,9 +1247,8 @@ export default function App() {
       {/* ================= 1. 极致沉浸式电影感首屏 ================= */}
       <header className="relative w-full h-screen overflow-hidden flex items-center justify-center">
         <img
-          src={bgImageError ? "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80" : "db05a088f45ab1cd9cf81bec617acf8d.jpg"}
+          src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=2000&q=85"
           alt="Media Center Core Memory"
-          onError={() => setBgImageError(true)}
           className="absolute inset-0 w-full h-full object-cover z-0 transition-all duration-[1500ms]"
           style={{
             filter: "blur(10px) brightness(0.35) contrast(1.05) saturate(0.85)",
@@ -1610,22 +1595,46 @@ export default function App() {
 
       {/* ================= 4.1 歌词同步律动面板 ================= */}
       <div
-        onMouseDown={handleDragStart}
-        onTouchStart={handleDragStart}
-        className="fixed bottom-32 left-1/2 z-40 w-[92%] max-w-xl text-center select-none flex items-center justify-center transition-shadow duration-[1000ms]"
-        style={{
-          transform: `translate(calc(-50% + ${lyricOffset.x}px), ${lyricOffset.y}px)`,
-          cursor: isDraggingLyric.current ? 'grabbing' : 'grab',
-          touchAction: 'none'
-        }}
+        className={`fixed bottom-32 left-1/2 z-40 w-[92%] max-w-xl text-center select-none transition-all duration-[800ms] ease-out -translate-x-1/2 ${
+          isMusicVisible
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 translate-y-8 pointer-events-none'
+        }`}
       >
-        <div className="w-full bg-[#05070f]/40 backdrop-blur-xl border border-white/10 rounded-2xl px-2 shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:border-white/15 hover:bg-white/[0.02] transition-all duration-500">
-          <ParticleLyrics text={getActiveLyricText()} />
+        <div className="w-full flex items-center justify-center">
+          <div className="w-full bg-[#05070f]/40 backdrop-blur-xl border border-white/10 rounded-2xl px-2 shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:border-white/15 hover:bg-white/[0.02] transition-all duration-500">
+            <ParticleLyrics text={getActiveLyricText()} />
+          </div>
         </div>
       </div>
 
       {/* ================= 5. 黑胶音乐盒 ================= */}
-      <div className="fixed bottom-8 right-6 md:right-12 z-50 flex flex-col items-end font-ui">
+      {/* 隐藏时仅显示恢复按钮 */}
+      <div
+        onClick={() => setIsMusicVisible(true)}
+        className={`fixed bottom-8 right-6 md:right-12 z-50 flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-zinc-800/80 to-zinc-950/90 border border-white/10 hover:border-indigo-500/30 cursor-pointer select-none transition-all duration-500 shadow-[0_16px_40px_rgba(0,0,0,0.7)] hover:scale-[1.05] ${
+          isMusicVisible
+            ? 'opacity-0 scale-0 pointer-events-none'
+            : 'opacity-100 scale-100 pointer-events-auto'
+        }`}
+        title="显示音乐组件"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-indigo-400">
+          <path d="M9 18V5l12-2v13" />
+          <circle cx="6" cy="18" r="3" />
+          <circle cx="18" cy="16" r="3" />
+        </svg>
+      </div>
+
+      {/* 完整音乐组件（歌词 + 黑胶音乐盒 + 提示气泡） */}
+      <div
+        className={`fixed bottom-8 right-6 md:right-12 z-50 transition-all duration-[800ms] ease-out ${
+          isMusicVisible
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 translate-y-12 pointer-events-none'
+        }`}
+      >
+      <div className="flex flex-col items-end font-ui">
 
         {showMiniPlaylist && (
           <div className="mb-3 bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 w-52 shadow-2xl animate-fade-in text-[10px] select-none text-left">
@@ -1691,6 +1700,24 @@ export default function App() {
 
         <div className="origin-bottom-right transform scale-[0.7] flex items-center gap-3">
 
+          {/* 隐藏按钮 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMusicVisible(false);
+            }}
+            className="w-16 h-16 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-950/90 border border-white/10 hover:border-red-500/30 flex items-center justify-center cursor-pointer select-none transition-all duration-300 shadow-[0_16px_40px_rgba(0,0,0,0.7)] hover:scale-[1.05]"
+            title="隐藏音乐面板"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-white/60 hover:text-red-400">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+              <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+              <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+            </svg>
+          </button>
+
+          {/* 歌单列表按钮 */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -1741,6 +1768,7 @@ export default function App() {
           </div>
 
         </div>
+      </div>
       </div>
 
       {/* ================= 6. 故事弹窗 ================= */}
@@ -1962,7 +1990,111 @@ export default function App() {
 
                   {adminTab === 'guestbook' && (
                     <div className="space-y-4">
-                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 text-xs font-light tracking-wide text-white/40 mb-2 select-none">以下是所有历史留言印记，您可以直接一键清洗不合规留言。</div>
+                      {/* 备份操作区 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 font-ui">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] tracking-widest text-indigo-400 font-light uppercase font-artistic">
+                            留言板备份
+                          </span>
+                          <button
+                            onClick={async () => {
+                              setBackupStatus('loading');
+                              const result = await createBackup(messages);
+                              setBackupStatus(result.reason);
+                              if (result.ok) listBackups().then(setBackups);
+                              setTimeout(() => setBackupStatus(''), 3000);
+                            }}
+                            disabled={backupStatus === 'loading'}
+                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
+                          >
+                            {backupStatus === 'loading' ? '备份中...' : '创建新备份'}
+                          </button>
+                        </div>
+                        {backupStatus === 'created' && (
+                          <p className="text-[9px] text-green-400 tracking-wide">✓ 备份已保存到 GitHub 仓库</p>
+                        )}
+                        {backupStatus === 'no_changes' && (
+                          <p className="text-[9px] text-amber-400 tracking-wide">→ 当前数据与最新备份一致，自动跳过重复备份</p>
+                        )}
+                        {backupStatus === 'failed' && (
+                          <p className="text-[9px] text-red-400 tracking-wide">✗ 备份创建失败，请重试</p>
+                        )}
+                      </div>
+
+                      {/* 恢复确认面板 */}
+                      {restoreConfirm && (
+                        <div className="border border-indigo-500/30 bg-indigo-950/20 rounded-xl p-4 space-y-3 font-ui">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="text-xs font-light text-indigo-200 font-artistic">从备份恢复留言</h4>
+                              <p className="text-[9px] text-white/40 mt-0.5">
+                                备份时间: {restoreConfirm.time} · 共 {restoreConfirm.messages.length} 条留言
+                              </p>
+                            </div>
+                            <button onClick={() => setRestoreConfirm(null)} className="text-white/40 hover:text-white p-1">
+                              <CloseIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          {/* 对比预览：当前 vs 备份 */}
+                          <div className="grid grid-cols-2 gap-3 text-[10px]">
+                            <div className="bg-white/[0.03] rounded-lg p-3 border border-white/5">
+                              <span className="text-white/40 block mb-1 tracking-wide">当前 ({messages.length} 条)</span>
+                              <div className="text-white/60 max-h-24 overflow-y-auto space-y-1 story-scrollbar">
+                                {messages.slice(0, 8).map(m => (
+                                  <div key={m.id} className="truncate text-[9px]">{m.name}: {m.text}</div>
+                                ))}
+                                {messages.length > 8 && <div className="text-white/20 text-[8px]">...还有 {messages.length - 8} 条</div>}
+                              </div>
+                            </div>
+                            <div className="bg-white/[0.03] rounded-lg p-3 border border-white/5">
+                              <span className="text-white/40 block mb-1 tracking-wide">备份 ({restoreConfirm.messages.length} 条)</span>
+                              <div className="text-white/60 max-h-24 overflow-y-auto space-y-1 story-scrollbar">
+                                {restoreConfirm.messages.slice(0, 8).map((m, i) => (
+                                  <div key={i} className="truncate text-[9px]">{m.name}: {m.text}</div>
+                                ))}
+                                {restoreConfirm.messages.length > 8 && <div className="text-white/20 text-[8px]">...还有 {restoreConfirm.messages.length - 8} 条</div>}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 justify-end">
+                            <button onClick={() => setRestoreConfirm(null)} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-[9px] rounded text-white/70 select-none">取消</button>
+                            <button onClick={async () => {
+                              setMessages(restoreConfirm.messages);
+                              await saveMessages(restoreConfirm.messages);
+                              setRestoreConfirm(null);
+                            }} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-[9px] rounded text-white select-none">确认恢复</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 历史备份列表 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 font-ui">
+                        <span className="text-[10px] tracking-widest text-white/40 font-light uppercase font-artistic block mb-3">
+                          历史备份 ({backups.length})
+                        </span>
+                        {backups.length === 0 ? (
+                          <div className="text-center py-6 text-[9px] text-white/20 tracking-wide">暂无备份记录，点击上方按钮创建</div>
+                        ) : (
+                          <div className="space-y-2 max-h-40 overflow-y-auto story-scrollbar">
+                            {backups.map(bak => (
+                              <div key={bak.name} className="flex items-center justify-between bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-lg px-3 py-2 transition-all">
+                                <span className="text-[10px] text-white/60 tracking-wide font-mono">{bak.time}</span>
+                                <button onClick={async () => {
+                                  const msgs = await getBackupContent(bak.name);
+                                  if (msgs) setRestoreConfirm({ name: bak.name, messages: msgs, time: bak.time });
+                                }} className="px-2 py-1 bg-white/5 hover:bg-white/10 text-[8px] rounded text-white/50 hover:text-white transition-all select-none">
+                                  查看对比
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 现有留言审核 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 text-xs font-light tracking-wide text-white/40 mb-2 select-none">以下是所有历史留言印记，您可以直接管理不合规留言。</div>
                       {messages.length === 0 ? (
                         <div className="text-center py-12 text-xs font-light text-white/20 tracking-wider">暂无留言可以审核</div>
                       ) : (
@@ -2022,6 +2154,21 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* ================= 回到顶部按钮 ================= */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={`fixed bottom-8 left-6 md:left-12 z-50 flex items-center justify-center w-11 h-11 rounded-full bg-gradient-to-br from-zinc-800/80 to-zinc-950/90 border border-white/10 hover:border-indigo-500/30 cursor-pointer select-none transition-all duration-500 shadow-[0_16px_40px_rgba(0,0,0,0.7)] hover:scale-[1.05] ${
+          showBackToTop
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
+        title="回到顶部"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-indigo-400">
+          <polyline points="18 15 12 9 6 15" />
+        </svg>
+      </button>
 
       {/* ================= 8. 页脚 ================= */}
       <footer className="bg-[#03050a] py-16 border-t border-white/[0.03] text-center font-artistic" ref={addToRefs}>
