@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { fetchMessages, saveMessages, listBackups, createBackup, getBackupContent } from './guestbook.ts';
+import { fetchTexts, saveTexts, defaultTexts } from './siteTexts.ts';
+import { hashPassword, fetchAdminConfig, saveAdminConfig, generateCode } from './adminConfig.ts';
+import emailjs from '@emailjs/browser';
 
 // 防御性注入：显式地将 React、ReactDOM 以及 tailwind 挂载到全局 window 对象上
 // 这能彻底解决沙箱在延迟加载或编译测试脚本时，因找不到全局宿主对象而引发的 ReferenceError 报错
@@ -372,6 +375,30 @@ function ParticleLyrics({ text }) {
   );
 }
 
+// ================= 文本编辑器辅助组件 =================
+function TextEditRow({ label, value, onChange, multiline }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-[9px] text-white/40 tracking-wider">{label}</label>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          rows="3"
+          className="w-full bg-white/[0.04] border border-white/10 text-xs p-2.5 rounded text-white/90 outline-none focus:border-indigo-500/40 resize-none"
+        />
+      ) : (
+        <input
+          type="text"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="w-full bg-white/[0.04] border border-white/10 text-xs p-2.5 rounded text-white/90 outline-none focus:border-indigo-500/40"
+        />
+      )}
+    </div>
+  );
+}
+
 // ================= 主应用 =================
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -735,6 +762,29 @@ export default function App() {
   const [restoreConfirm, setRestoreConfirm] = useState(null); // { name, messages, time } | null
   const [showBackToTop, setShowBackToTop] = useState(false);
 
+  // 页面文本配置 & 公告 & 文本编辑状态
+  const [siteTexts, setSiteTexts] = useState(defaultTexts);
+  const [textSaveStatus, setTextSaveStatus] = useState('');
+  const [isAnnounceOpen, setIsAnnounceOpen] = useState(false);
+
+  // 密码修改 & 邮箱验证状态
+  const [storedPasswordHash, setStoredPasswordHash] = useState(null); // 从 GitHub 加载
+  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
+  const [securityEmail, setSecurityEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [sentCode, setSentCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
+  const [codeVerified, setCodeVerified] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [securityStatus, setSecurityStatus] = useState(''); // '' | 'sending' | 'sent' | 'verified' | 'error' | 'saved'
+  const [securityMessage, setSecurityMessage] = useState('');
+  // EmailJS 配置（用户填写）
+  const [emailjsServiceId, setEmailjsServiceId] = useState('');
+  const [emailjsTemplateId, setEmailjsTemplateId] = useState('');
+  const [emailjsPublicKey, setEmailjsPublicKey] = useState('');
+  const [showEmailSetup, setShowEmailSetup] = useState(false);
+
   const revealRefs = useRef([]);
   const audioRef = useRef(null);
 
@@ -807,6 +857,18 @@ export default function App() {
       });
     }, 30000);
 
+    // 从 GitHub 加载页面文本配置
+    fetchTexts().then(texts => {
+      if (texts) setSiteTexts(texts);
+    });
+
+    // 每 30 秒自动同步文本配置
+    const textRefreshInterval = setInterval(() => {
+      fetchTexts().then(texts => {
+        if (texts) setSiteTexts(texts);
+      });
+    }, 30000);
+
     // 初始化滚动检测机制
     const observerOptions = {
       root: null,
@@ -832,6 +894,7 @@ export default function App() {
       observer.disconnect();
       clearTimeout(timer);
       clearInterval(refreshInterval);
+      clearInterval(textRefreshInterval);
     };
   }, []);
 
@@ -863,6 +926,18 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightbox]);
+
+  // 从 GitHub 加载管理员配置
+  useEffect(() => {
+    fetchAdminConfig().then(cfg => {
+      setStoredPasswordHash(cfg.passwordHash);
+      if (cfg.adminEmail) setSecurityEmail(cfg.adminEmail);
+      if (cfg.emailjsServiceId) setEmailjsServiceId(cfg.emailjsServiceId);
+      if (cfg.emailjsTemplateId) setEmailjsTemplateId(cfg.emailjsTemplateId);
+      if (cfg.emailjsPublicKey) setEmailjsPublicKey(cfg.emailjsPublicKey);
+      setIsLoadingConfig(false);
+    });
+  }, []);
 
   // 滚动监听：控制回到顶部按钮显隐
   useEffect(() => {
@@ -999,9 +1074,14 @@ export default function App() {
   };
 
   const previewData = getActivePreviewData();
-  const handleAdminLogin = (e) => {
+  const handleAdminLogin = async (e) => {
     e.preventDefault();
-    if (adminPassword === 'ktarch666') {
+    const hashed = await hashPassword(adminPassword);
+    // 如果 GitHub 有存储的哈希就用它对比，否则默认 ktarch666
+    const valid = storedPasswordHash
+      ? hashed === storedPasswordHash
+      : adminPassword === 'ktarch666';
+    if (valid) {
       setIsAdminAuthenticated(true);
       setLoginError(false);
       setAdminPassword('');
@@ -1265,7 +1345,13 @@ export default function App() {
             <FilmIcon className="w-4 h-4 text-indigo-400" />
             <span>KT. MEMORY</span>
           </div>
-          <div className="flex items-center z-30 font-ui">
+          <div className="flex items-center z-30 font-ui gap-2">
+            <button
+              onClick={() => setIsAnnounceOpen(true)}
+              className="px-5 py-2 bg-white/[0.04] backdrop-blur-md border border-white/10 hover:bg-white/[0.12] hover:border-white/25 active:scale-95 text-white/90 hover:text-white rounded-full transition-all duration-500 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] text-[10px] tracking-[0.2em] font-light select-none"
+            >
+              {siteTexts.announcement.title}
+            </button>
             <button
               onClick={() => setIsStoryOpen(true)}
               className="px-5 py-2 bg-white/[0.04] backdrop-blur-md border border-white/10 hover:bg-white/[0.12] hover:border-white/25 active:scale-95 text-white/90 hover:text-white rounded-full transition-all duration-500 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] text-[10px] tracking-[0.2em] font-light select-none"
@@ -1277,24 +1363,24 @@ export default function App() {
 
         <div className="relative z-20 flex flex-col items-center text-center w-full px-6 select-none font-artistic">
           <div className={`text-xs md:text-sm tracking-[0.45em] text-indigo-300/80 mb-5 font-light uppercase fade-up-init ${isLoaded ? 'loaded' : ''}`} style={{ transitionDelay: '100ms' }}>
-            欢迎来到属于传媒中心的记忆画廊
+                        {siteTexts.hero.welcome}
           </div>
 
           <div className={`flex flex-col items-center gap-5 fade-up-init ${isLoaded ? 'loaded' : ''}`} style={{ transitionDelay: '400ms' }}>
             <h1 className="text-4xl md:text-7xl font-light tracking-[0.25em] text-white drop-shadow-2xl">
-              传媒中心-记忆画廊
+              {siteTexts.hero.title}
             </h1>
             <div className="flex items-center gap-4 w-full justify-center">
               <div className="h-[1px] w-6 bg-white/20"></div>
               <span className="text-[10px] md:text-xs tracking-[0.5em] font-light text-white/50 uppercase">
-                DESIGNED BY KTarch
+                {siteTexts.hero.designer}
               </span>
               <div className="h-[1px] w-6 bg-white/20"></div>
             </div>
           </div>
 
           <div className={`absolute -bottom-24 md:-bottom-28 flex flex-col items-center gap-3 fade-up-init ${isLoaded ? 'loaded' : ''}`} style={{ transitionDelay: '900ms' }}>
-            <span className="text-[9px] tracking-[0.3em] text-white/40 uppercase">Scroll to Explore</span>
+            <span className="text-[9px] tracking-[0.3em] text-white/40 uppercase">{siteTexts.hero.scrollHint}</span>
             <ChevronDownIcon className="w-4 h-4 text-white/30 animate-bounce" />
           </div>
         </div>
@@ -1305,11 +1391,11 @@ export default function App() {
         <div className="text-center mb-32 reveal-section" ref={addToRefs}>
           <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/5 border border-white/5">
             <CameraIcon className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="text-[9px] tracking-[0.3em] text-white/60">COLLECTION</span>
+            <span className="text-[9px] tracking-[0.3em] text-white/60">{siteTexts.gallerySection.label}</span>
           </div>
           <p className="text-lg md:text-2xl font-extralight text-white/80 leading-relaxed max-w-2xl mx-auto tracking-wide">
-            "记录每一个转瞬即逝的光影，<br/>
-            <span className="text-indigo-200/90 font-light">在时间的长河中留下属于我们的注脚。</span>"
+                        "{siteTexts.gallerySection.quote1}<br/>
+            <span className="text-indigo-200/90 font-light">{siteTexts.gallerySection.quote2}</span>"
           </p>
         </div>
 
@@ -1355,7 +1441,7 @@ export default function App() {
         </div>
       </main>
 
-      {/* ================= 3. 光影碎刻·图片集 ================= */}
+      {/* ================= 3. {siteTexts.albumSection.title}·图片集 ================= */}
       <section
         ref={addToRefs}
         className="relative z-20 bg-[#03050a] py-24 px-6 md:px-12 max-w-[1440px] mx-auto reveal-section font-artistic"
@@ -1363,10 +1449,10 @@ export default function App() {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/5 border border-white/5">
             <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="text-[9px] tracking-[0.3em] text-white/60">ALBUM FRAGMENTS</span>
+            <span className="text-[9px] tracking-[0.3em] text-white/60">{siteTexts.albumSection.label}</span>
           </div>
-          <h2 className="text-2xl md:text-4xl font-light tracking-[0.2em] text-white/90">光影碎刻</h2>
-          <p className="text-xs md:text-sm font-light text-white/40 mt-3 tracking-wider">指尖轻启，拼凑往昔失散的时光拼图</p>
+          <h2 className="text-2xl md:text-4xl font-light tracking-[0.2em] text-white/90">{siteTexts.albumSection.title}</h2>
+          <p className="text-xs md:text-sm font-light text-white/40 mt-3 tracking-wider">{siteTexts.albumSection.subtitle}</p>
 
           <div className="flex justify-center gap-2 mt-8 md:mt-10 max-w-md mx-auto p-1 bg-white/[0.01] backdrop-blur-xl border border-white/5 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)] font-ui">
             {['ALL', 'LANDSCAPE', 'CITY', 'DREAM'].map((cat) => (
@@ -1506,7 +1592,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ================= 4. 留言印记区 ================= */}
+      {/* ================= 4. {siteTexts.guestbookSection.title}区 ================= */}
       <section
         ref={addToRefs}
         className="relative z-20 bg-[#03050a] py-24 px-6 md:px-12 max-w-[1000px] mx-auto reveal-section font-artistic"
@@ -1514,10 +1600,10 @@ export default function App() {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/5 border border-white/5">
             <MessageSquareIcon className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="text-[9px] tracking-[0.3em] text-white/60">GUESTBOOK</span>
+            <span className="text-[9px] tracking-[0.3em] text-white/60">{siteTexts.guestbookSection.label}</span>
           </div>
-          <h2 className="text-2xl md:text-4xl font-light tracking-[0.2em] text-white/90">留言印记</h2>
-          <p className="text-xs md:text-sm font-light text-white/40 mt-3 tracking-wider">在光的尽头，留下属于你的那一帧温度</p>
+          <h2 className="text-2xl md:text-4xl font-light tracking-[0.2em] text-white/90">{siteTexts.guestbookSection.title}</h2>
+          <p className="text-xs md:text-sm font-light text-white/40 mt-3 tracking-wider">{siteTexts.guestbookSection.subtitle}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -1802,28 +1888,68 @@ export default function App() {
 
           <div className="max-h-[60vh] md:max-h-[50vh] overflow-y-auto pr-4 space-y-6 md:space-y-8 story-scrollbar text-white/80">
             <h3 className="text-xl md:text-3xl font-light tracking-[0.15em] text-white/95 leading-normal">
-              追光者的编年史：传媒中心背后的故事
+              {siteTexts.storySection.title}
             </h3>
             <p className="text-xs md:text-sm font-light leading-relaxed tracking-wider text-white/70">
-              这里是故事开始的地方，也是无数快门和指尖创意的聚集地。传媒中心不仅仅是一间摆满相机 and 电脑的工作室，更是一艘在时间星河里打捞记忆的飞船。
+              {siteTexts.storySection.intro}
             </p>
             <div className="space-y-4">
-              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">第一章：快门与地平线</h4>
+              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">{siteTexts.storySection.chapter1Title}</h4>
               <p className="text-xs md:text-sm font-light leading-relaxed tracking-wider text-white/60">
-                我们曾踏遍清晨五点的薄雾，也曾在深夜的钢铁城市边缘静静等待星辰破空。那些被相机捕获的瞬间——风雪肆虐的峰峦，或是钢铁森林里渐暗的暮色，都不止是图像本身，而是属于我们每一个拍摄者当时呼吸的声音。
+                {siteTexts.storySection.chapter1Text}
               </p>
             </div>
             <div className="space-y-4">
-              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">第二章：屏幕里的不眠夜</h4>
+              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">{siteTexts.storySection.chapter2Title}</h4>
               <p className="text-xs md:text-sm font-light leading-relaxed tracking-wider text-white/60">
-                在温热咖啡与冷光屏幕的微弱亮光中，无数帧画面在这里被反复打磨、拼接。那些欢笑、争论和深夜里因渲染成功而响起的低低欢呼，共同编织成名为「青春」的底片。在剪辑时间轴上的每一秒，都是我们在时间长河中刻下最深的痕痕迹。
+                {siteTexts.storySection.chapter2Text}
               </p>
             </div>
             <div className="space-y-4">
-              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">终章：帧的永恒</h4>
+              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">{siteTexts.storySection.chapter3Title}</h4>
               <p className="text-xs md:text-sm font-light leading-relaxed tracking-wider text-white/60">
-                记忆画廊不会终结。每一位来到这里的人，都能透过这些跳动的光影和悠扬的音浪，看见那些曾经炽热、依然跳动的热忱。我们记录转瞬即逝的现在，只为向遥远的未来呈递一份不灭的赞歌。
+                {siteTexts.storySection.chapter3Text}
               </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= 6.1 公告弹窗 ================= */}
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 transition-all duration-[1000ms] ${
+          isAnnounceOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        } font-artistic`}
+      >
+        <div
+          className="absolute inset-0 bg-[#03050a]/85 backdrop-blur-2xl"
+          onClick={() => setIsAnnounceOpen(false)}
+        ></div>
+
+        <div
+          className={`relative w-full max-w-2xl bg-white/[0.03] border border-white/10 rounded-2xl md:rounded-3xl p-6 md:p-10 shadow-[0_32px_120px_rgba(0,0,0,0.8)] backdrop-blur-2xl transition-all duration-[1000ms] transform ${
+            isAnnounceOpen ? 'translate-y-0 scale-100' : 'translate-y-12 scale-95'
+          }`}
+        >
+          <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+            <div className="flex items-center gap-2 text-white/40 text-[9px] md:text-[10px] tracking-[0.3em] font-light">
+              <span className="text-indigo-400">📢</span>
+              <span>ANNOUNCEMENT</span>
+            </div>
+            <button
+              onClick={() => setIsAnnounceOpen(false)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/[0.05] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 active:scale-95 transition-all duration-300 text-[10px] tracking-[0.25em] text-white/80 hover:text-white font-light select-none font-ui"
+            >
+              <span>← CLOSE</span>
+            </button>
+          </div>
+
+          <div className="max-h-[55vh] md:max-h-[45vh] overflow-y-auto pr-4 story-scrollbar text-white/80">
+            <div className="text-lg md:text-2xl font-light tracking-[0.1em] text-white/95 mb-6">
+              {siteTexts.announcement.title}
+            </div>
+            <div className="text-xs md:text-sm font-light leading-relaxed tracking-wider text-white/70 whitespace-pre-wrap">
+              {siteTexts.announcement.content}
             </div>
           </div>
         </div>
@@ -1883,7 +2009,9 @@ export default function App() {
                     { id: 'gallery', label: '核心相册 (Core Gallery)' },
                     { id: 'collection', label: '碎刻相册 (Fragments)' },
                     { id: 'guestbook', label: '留言审核 (Guestbook)' },
-                    { id: 'playlist', label: '乐轨列表 (BGM Tracks)' }
+                    { id: 'playlist', label: '乐轨列表 (BGM Tracks)' },
+                    { id: 'texts', label: '页面文本 (Text Editor)' },
+                    { id: 'security', label: '安全设置 (Security)' }
                   ].map(tab => (
                     <button key={tab.id} onClick={() => { setAdminTab(tab.id); setEditingItemId(null); }}
                       className={`px-4 py-1.5 rounded-full text-[9px] tracking-widest font-light transition-all shrink-0 border ${
@@ -2094,7 +2222,7 @@ export default function App() {
                       </div>
 
                       {/* 现有留言审核 */}
-                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 text-xs font-light tracking-wide text-white/40 mb-2 select-none">以下是所有历史留言印记，您可以直接管理不合规留言。</div>
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 text-xs font-light tracking-wide text-white/40 mb-2 select-none">以下是所有历史{siteTexts.guestbookSection.title}，您可以直接管理不合规留言。</div>
                       {messages.length === 0 ? (
                         <div className="text-center py-12 text-xs font-light text-white/20 tracking-wider">暂无留言可以审核</div>
                       ) : (
@@ -2110,6 +2238,298 @@ export default function App() {
                             <button onClick={() => deleteGuestMessage(msg.id)} className="p-2 bg-red-950/20 hover:bg-red-950/50 border border-red-500/10 hover:border-red-500/30 rounded text-red-300 hover:text-red-200 transition-all select-none" title="删除此言论"><TrashIcon className="w-3.5 h-3.5" /></button>
                           </div>
                         ))
+                      )}
+                    </div>
+                  )}
+
+                  {adminTab === 'texts' && (
+                    <div className="space-y-4 font-ui">
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 text-[10px] font-light tracking-wide text-white/40">
+                        <p className="mb-3">编辑页面上的文本内容，修改后点击保存，所有用户将在 30 秒内同步看到更新。</p>
+                        <button
+                          onClick={async () => {
+                            setTextSaveStatus('saving');
+                            const ok = await saveTexts(siteTexts);
+                            setTextSaveStatus(ok ? 'saved' : 'failed');
+                            setTimeout(() => setTextSaveStatus(''), 3000);
+                          }}
+                          disabled={textSaveStatus === 'saving'}
+                          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
+                        >
+                          {textSaveStatus === 'saving' ? '保存中...' : '保存到 GitHub'}
+                        </button>
+                        {textSaveStatus === 'saved' && <span className="ml-3 text-[9px] text-green-400">✓ 已同步保存</span>}
+                        {textSaveStatus === 'failed' && <span className="ml-3 text-[9px] text-red-400">✗ 保存失败，请重试</span>}
+                      </div>
+
+                      {/* 首屏文本 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                        <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">🏠 首屏 Hero</h4>
+                        <div className="space-y-3">
+                          <TextEditRow label="欢迎语" value={siteTexts.hero.welcome} onChange={v => setSiteTexts(s => ({ ...s, hero: { ...s.hero, welcome: v } }))} />
+                          <TextEditRow label="主标题" value={siteTexts.hero.title} onChange={v => setSiteTexts(s => ({ ...s, hero: { ...s.hero, title: v } }))} />
+                          <TextEditRow label="设计师标注" value={siteTexts.hero.designer} onChange={v => setSiteTexts(s => ({ ...s, hero: { ...s.hero, designer: v } }))} />
+                          <TextEditRow label="滚动提示" value={siteTexts.hero.scrollHint} onChange={v => setSiteTexts(s => ({ ...s, hero: { ...s.hero, scrollHint: v } }))} />
+                        </div>
+                      </div>
+
+                      {/* 画廊区文本 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                        <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">🖼️ 画廊区 Gallery</h4>
+                        <div className="space-y-3">
+                          <TextEditRow label="区域标签" value={siteTexts.gallerySection.label} onChange={v => setSiteTexts(s => ({ ...s, gallerySection: { ...s.gallerySection, label: v } }))} />
+                          <TextEditRow label="引文第一行" value={siteTexts.gallerySection.quote1} onChange={v => setSiteTexts(s => ({ ...s, gallerySection: { ...s.gallerySection, quote1: v } }))} />
+                          <TextEditRow label="引文第二行" value={siteTexts.gallerySection.quote2} onChange={v => setSiteTexts(s => ({ ...s, gallerySection: { ...s.gallerySection, quote2: v } }))} />
+                        </div>
+                      </div>
+
+                      {/* 碎刻相册文本 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                        <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">📸 碎刻相册 Album</h4>
+                        <div className="space-y-3">
+                          <TextEditRow label="区域标签" value={siteTexts.albumSection.label} onChange={v => setSiteTexts(s => ({ ...s, albumSection: { ...s.albumSection, label: v } }))} />
+                          <TextEditRow label="区域标题" value={siteTexts.albumSection.title} onChange={v => setSiteTexts(s => ({ ...s, albumSection: { ...s.albumSection, title: v } }))} />
+                          <TextEditRow label="区域副标题" value={siteTexts.albumSection.subtitle} onChange={v => setSiteTexts(s => ({ ...s, albumSection: { ...s.albumSection, subtitle: v } }))} />
+                        </div>
+                      </div>
+
+                      {/* 留言板文本 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                        <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">💬 留言板 Guestbook</h4>
+                        <div className="space-y-3">
+                          <TextEditRow label="区域标签" value={siteTexts.guestbookSection.label} onChange={v => setSiteTexts(s => ({ ...s, guestbookSection: { ...s.guestbookSection, label: v } }))} />
+                          <TextEditRow label="区域标题" value={siteTexts.guestbookSection.title} onChange={v => setSiteTexts(s => ({ ...s, guestbookSection: { ...s.guestbookSection, title: v } }))} />
+                          <TextEditRow label="区域副标题" value={siteTexts.guestbookSection.subtitle} onChange={v => setSiteTexts(s => ({ ...s, guestbookSection: { ...s.guestbookSection, subtitle: v } }))} />
+                        </div>
+                      </div>
+
+                      {/* STORY 文本 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                        <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">📖 故事 STORY</h4>
+                        <div className="space-y-3">
+                          <TextEditRow label="故事标题" value={siteTexts.storySection.title} onChange={v => setSiteTexts(s => ({ ...s, storySection: { ...s.storySection, title: v } }))} />
+                          <TextEditRow label="引言" value={siteTexts.storySection.intro} onChange={v => setSiteTexts(s => ({ ...s, storySection: { ...s.storySection, intro: v } }))} multiline />
+                          <TextEditRow label="第一章标题" value={siteTexts.storySection.chapter1Title} onChange={v => setSiteTexts(s => ({ ...s, storySection: { ...s.storySection, chapter1Title: v } }))} />
+                          <TextEditRow label="第一章内容" value={siteTexts.storySection.chapter1Text} onChange={v => setSiteTexts(s => ({ ...s, storySection: { ...s.storySection, chapter1Text: v } }))} multiline />
+                          <TextEditRow label="第二章标题" value={siteTexts.storySection.chapter2Title} onChange={v => setSiteTexts(s => ({ ...s, storySection: { ...s.storySection, chapter2Title: v } }))} />
+                          <TextEditRow label="第二章内容" value={siteTexts.storySection.chapter2Text} onChange={v => setSiteTexts(s => ({ ...s, storySection: { ...s.storySection, chapter2Text: v } }))} multiline />
+                          <TextEditRow label="第三章标题" value={siteTexts.storySection.chapter3Title} onChange={v => setSiteTexts(s => ({ ...s, storySection: { ...s.storySection, chapter3Title: v } }))} />
+                          <TextEditRow label="第三章内容" value={siteTexts.storySection.chapter3Text} onChange={v => setSiteTexts(s => ({ ...s, storySection: { ...s.storySection, chapter3Text: v } }))} multiline />
+                        </div>
+                      </div>
+
+                      {/* 公告文本 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                        <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">📢 公告 Announcement</h4>
+                        <div className="space-y-3">
+                          <TextEditRow label="公告标题" value={siteTexts.announcement.title} onChange={v => setSiteTexts(s => ({ ...s, announcement: { ...s.announcement, title: v } }))} />
+                          <TextEditRow label="公告内容" value={siteTexts.announcement.content} onChange={v => setSiteTexts(s => ({ ...s, announcement: { ...s.announcement, content: v } }))} multiline />
+                        </div>
+                      </div>
+
+                      {/* 页脚文本 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                        <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">📄 页脚 Footer</h4>
+                        <div className="space-y-3">
+                          <TextEditRow label="版权文字" value={siteTexts.footer.copyright} onChange={v => setSiteTexts(s => ({ ...s, footer: { ...s.footer, copyright: v } }))} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {adminTab === 'security' && (
+                    <div className="space-y-4 font-ui">
+                      {/* EmailJS 首次配置提示 */}
+                      {!showEmailSetup && !emailjsPublicKey && (
+                        <div className="border border-amber-500/30 bg-amber-950/10 rounded-xl p-4">
+                          <p className="text-[10px] text-amber-200/80 tracking-wide mb-3">
+                            首次使用需要配置 EmailJS 来发送验证码。请先免费注册 <a href="https://www.emailjs.com" target="_blank" rel="noopener noreferrer" className="underline text-indigo-400">emailjs.com</a>，创建一个 Service 和 Email Template，然后填入以下信息。
+                          </p>
+                          <button onClick={() => setShowEmailSetup(true)} className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-[9px] tracking-widest rounded-lg transition-all text-white select-none">
+                            配置 EmailJS
+                          </button>
+                        </div>
+                      )}
+
+                      {/* EmailJS 配置面板 */}
+                      {(showEmailSetup || emailjsPublicKey) && (
+                        <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic">📧 EmailJS 配置</h4>
+                            <button onClick={async () => {
+                              const cfg = await fetchAdminConfig();
+                              const updated = { ...cfg, emailjsServiceId, emailjsTemplateId, emailjsPublicKey };
+                              const ok = await saveAdminConfig(updated);
+                              setSecurityStatus(ok ? 'saved' : 'error');
+                              setSecurityMessage(ok ? '✓ EmailJS 配置已保存' : '✗ 保存失败');
+                              setTimeout(() => setSecurityStatus(''), 3000);
+                            }} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-[9px] tracking-widest rounded-lg text-white select-none">
+                              保存配置
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] text-white/40">Service ID (如: service_xxx)</label>
+                              <input type="text" value={emailjsServiceId} onChange={e => setEmailjsServiceId(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="service_xxx" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] text-white/40">Template ID (如: template_xxx)</label>
+                              <input type="text" value={emailjsTemplateId} onChange={e => setEmailjsTemplateId(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="template_xxx" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] text-white/40">Public Key (User ID)</label>
+                              <input type="text" value={emailjsPublicKey} onChange={e => setEmailjsPublicKey(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="xxx" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] text-white/40">管理员邮箱（接收验证码）</label>
+                              <input type="email" value={securityEmail} onChange={e => setSecurityEmail(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="your@email.com" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 修改密码区域 */}
+                      {emailjsPublicKey && (
+                        <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                          <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">🔑 修改管理员密码</h4>
+
+                          {/* 步骤1: 发送验证码 */}
+                          {!codeSent && !codeVerified && (
+                            <div className="space-y-3">
+                              <p className="text-[9px] text-white/40">验证码将发送到您配置的管理员邮箱：{securityEmail || '请先配置邮箱'}</p>
+                              <button
+                                onClick={async () => {
+                                  if (!securityEmail || !emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey) {
+                                    setSecurityStatus('error');
+                                    setSecurityMessage('✗ 请先完善 EmailJS 配置和管理员邮箱');
+                                    setTimeout(() => setSecurityStatus(''), 3000);
+                                    return;
+                                  }
+                                  setSecurityStatus('sending');
+                                  const code = generateCode();
+                                  try {
+                                    await emailjs.send(emailjsServiceId, emailjsTemplateId, {
+                                      to_email: securityEmail,
+                                      verification_code: code,
+                                      subject: '记忆画廊 - 管理员密码修改验证码',
+                                    }, emailjsPublicKey);
+                                    setSentCode(code);
+                                    setCodeSent(true);
+                                    setSecurityStatus('sent');
+                                    setSecurityMessage('✓ 验证码已发送到邮箱，请查收');
+                                    setTimeout(() => setSecurityStatus(''), 3000);
+                                  } catch (err) {
+                                    setSecurityStatus('error');
+                                    setSecurityMessage('✗ 验证码发送失败：' + (err?.text || err?.message || '未知错误'));
+                                  }
+                                }}
+                                disabled={securityStatus === 'sending' || !securityEmail}
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
+                              >
+                                {securityStatus === 'sending' ? '发送中...' : '发送验证码'}
+                              </button>
+                            </div>
+                          )}
+
+                          {/* 步骤2: 输入验证码 */}
+                          {codeSent && !codeVerified && (
+                            <div className="space-y-3">
+                              <p className="text-[9px] text-green-400">✓ 验证码已发送至 {securityEmail}</p>
+                              <div className="flex gap-2 items-end">
+                                <div className="flex-1 flex flex-col gap-1">
+                                  <label className="text-[9px] text-white/40">输入 6 位验证码</label>
+                                  <input type="text" maxLength="6" value={verificationCode} onChange={e => setVerificationCode(e.target.value.replace(/\D/g, ''))} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40 text-center tracking-[0.5em]" placeholder="000000" />
+                                </div>
+                                <button onClick={() => {
+                                  setCodeSent(false);
+                                  setVerificationCode('');
+                                  setSecurityStatus('');
+                                }} className="px-3 py-2 bg-white/5 hover:bg-white/10 text-[9px] rounded text-white/60 select-none">重新发送</button>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (verificationCode === sentCode) {
+                                    setCodeVerified(true);
+                                    setSecurityStatus('verified');
+                                    setSecurityMessage('✓ 验证码验证通过，请设置新密码');
+                                    setTimeout(() => setSecurityStatus(''), 3000);
+                                  } else {
+                                    setSecurityStatus('error');
+                                    setSecurityMessage('✗ 验证码错误，请重新输入');
+                                  }
+                                }}
+                                disabled={verificationCode.length < 6}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
+                              >
+                                验证
+                              </button>
+                            </div>
+                          )}
+
+                          {/* 步骤3: 设置新密码 */}
+                          {codeVerified && (
+                            <div className="space-y-3 border-t border-white/5 pt-4">
+                              <p className="text-[9px] text-green-400">✓ 邮箱验证通过，请输入新密码</p>
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[9px] text-white/40">新密码</label>
+                                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="输入新密码" />
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[9px] text-white/40">确认新密码</label>
+                                <input type="password" value={newPasswordConfirm} onChange={e => setNewPasswordConfirm(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="再次输入新密码" />
+                              </div>
+                              {newPassword && newPasswordConfirm && newPassword !== newPasswordConfirm && (
+                                <p className="text-[9px] text-red-400">✗ 两次密码不一致</p>
+                              )}
+                              <button
+                                onClick={async () => {
+                                  if (newPassword.length < 4) {
+                                    setSecurityStatus('error');
+                                    setSecurityMessage('✗ 密码至少 4 位');
+                                    return;
+                                  }
+                                  if (newPassword !== newPasswordConfirm) {
+                                    setSecurityStatus('error');
+                                    setSecurityMessage('✗ 两次密码不一致');
+                                    return;
+                                  }
+                                  setSecurityStatus('sending');
+                                  const hash = await hashPassword(newPassword);
+                                  const cfg = await fetchAdminConfig();
+                                  const updated = { ...cfg, passwordHash: hash, adminEmail: securityEmail, emailjsServiceId, emailjsTemplateId, emailjsPublicKey };
+                                  const ok = await saveAdminConfig(updated);
+                                  if (ok) {
+                                    setStoredPasswordHash(hash);
+                                    setSecurityStatus('saved');
+                                    setSecurityMessage('✓ 密码已成功修改！');
+                                    // 重置状态
+                                    setNewPassword('');
+                                    setNewPasswordConfirm('');
+                                    setVerificationCode('');
+                                    setSentCode('');
+                                    setCodeSent(false);
+                                    setCodeVerified(false);
+                                  } else {
+                                    setSecurityStatus('error');
+                                    setSecurityMessage('✗ 密码保存到 GitHub 失败，请重试');
+                                  }
+                                  setTimeout(() => setSecurityStatus(''), 4000);
+                                }}
+                                disabled={!newPassword || !newPasswordConfirm || newPassword !== newPasswordConfirm || securityStatus === 'sending'}
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
+                              >
+                                {securityStatus === 'sending' ? '保存中...' : '确认修改密码'}
+                              </button>
+                            </div>
+                          )}
+
+                          {/* 状态消息 */}
+                          {securityMessage && (
+                            <p className={`mt-3 text-[9px] tracking-wide ${securityStatus === 'error' || securityStatus === 'failed' ? 'text-red-400' : 'text-green-400'}`}>
+                              {securityMessage}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
@@ -2184,7 +2604,7 @@ export default function App() {
           </button>
         </div>
         <div className="text-[9px] tracking-[0.3em] text-white/30 uppercase">
-          © {new Date().getFullYear()} KTarch. ALL RIGHTS RESERVED.
+          © {siteTexts.footer.copyright.replace('{year}', new Date().getFullYear())}
         </div>
       </footer>
     </div>
