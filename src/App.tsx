@@ -98,6 +98,43 @@ const ArrowRightIcon = ({ className }) => (
   </svg>
 );
 
+const SettingsIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+);
+
+const TrashIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <line x1="10" y1="11" x2="10" y2="17" />
+    <line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+);
+
+const EditIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const PlusIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+const LockIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
 // 拟真唱机唱针组件
 const ToneArm = ({ isPlaying }) => (
   <svg
@@ -136,7 +173,7 @@ function Snowfall() {
     canvas.width = width;
     canvas.height = height;
 
-    // 根据屏幕面积动态计算雪花数量，避免移动端过载
+    // 根据屏幕面积动态计算雪花数量
     const numFlakes = Math.min(100, Math.floor((width * height) / 12000));
     const flakes = [];
 
@@ -145,7 +182,7 @@ function Snowfall() {
       flakes.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        r: Math.random() * 2 + 0.6, // 半径 0.6px 到 2.6px，形成远近景深
+        r: Math.random() * 2 + 0.6, // 半径，形成远近景深
         d: Math.random() * numFlakes, // 独特的摇摆相位因子
         opacity: Math.random() * 0.5 + 0.15, // 柔和的半透明
         speedY: Math.random() * 1.0 + 0.4, // 下落速度
@@ -171,11 +208,10 @@ function Snowfall() {
       for (let i = 0; i < numFlakes; i++) {
         const f = flakes[i];
 
-        // 更新垂直和水平坐标（结合正弦波实现自然摇曳飘落）
         f.y += f.speedY;
         f.x += f.speedX + Math.sin(f.d) * 0.25;
 
-        // 边界检测：当雪花飘落出底部时，从顶部重新生成
+        // 边界检测
         if (f.y > height) {
           flakes[i] = {
             x: Math.random() * width,
@@ -189,13 +225,9 @@ function Snowfall() {
         }
 
         // 左右边界穿透
-        if (f.x > width) {
-          f.x = 0;
-        } else if (f.x < 0) {
-          f.x = width;
-        }
+        if (f.x > width) f.x = 0;
+        else if (f.x < 0) f.x = width;
 
-        // 持续微调水平波动相位
         f.d += 0.008;
       }
     };
@@ -207,7 +239,6 @@ function Snowfall() {
 
     loop();
 
-    // 监听窗口大小变化
     const handleResize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
@@ -232,6 +263,114 @@ function Snowfall() {
   );
 }
 
+// ================= 高级 Canvas 粒子歌词转换发生器 =================
+function ParticleLyrics({ text }) {
+  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const particlesRef = useRef([]);
+  const animationFrameRef = useRef(null);
+  const prevTextRef = useRef("");
+
+  useEffect(() => {
+    if (text !== prevTextRef.current) {
+      triggerTransitionBurst();
+      prevTextRef.current = text;
+    }
+  }, [text]);
+
+  const triggerTransitionBurst = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+
+    // 1. 旧歌词消散粒子：向下坠落并散开
+    const disintegrateCount = 35;
+    for (let i = 0; i < disintegrateCount; i++) {
+      particlesRef.current.push({
+        x: rect.width / 2 + (Math.random() - 0.5) * 180,
+        y: rect.height / 2 + (Math.random() - 0.5) * 10,
+        vx: (Math.random() - 0.5) * 5,
+        vy: Math.random() * 2.5 + 1.0, // 主要朝下坠落
+        size: Math.random() * 1.5 + 0.6,
+        color: Math.random() > 0.4 ? 'rgba(165, 180, 252, ' : 'rgba(255, 255, 255, ', // 柔和星光色 / 闪白
+        alpha: 1,
+        decay: Math.random() * 0.04 + 0.02
+      });
+    }
+
+    // 2. 新歌词凝聚粒子：向上飘散汇聚
+    const condensationCount = 35;
+    for (let i = 0; i < condensationCount; i++) {
+      particlesRef.current.push({
+        x: rect.width / 2 + (Math.random() - 0.5) * 220,
+        y: rect.height / 2 + (Math.random() - 0.5) * 20 + 5,
+        vx: (Math.random() - 0.5) * 2.5,
+        vy: -Math.random() * 2.5 - 1.5, // 向上飘逸
+        size: Math.random() * 2.2 + 1.0,
+        color: Math.random() > 0.3 ? 'rgba(99, 102, 241, ' : 'rgba(199, 210, 254, ', // 纯靛蓝 / 柔冷光
+        alpha: 1.0,
+        decay: Math.random() * 0.03 + 0.012
+      });
+    }
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const handleResize = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const particles = particlesRef.current;
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+
+        ctx.fillStyle = p.color + p.alpha + ')';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 死亡检测
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative w-full text-center py-4 px-6 min-h-[4rem] flex items-center justify-center">
+      <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none w-full h-full" />
+      {/* 应用专属歌词艺术字体 font-lyrics */}
+      <div key={text} className="font-lyrics text-sm md:text-base font-light tracking-[0.2em] text-indigo-100 drop-shadow-[0_2px_8px_rgba(99,102,241,0.3)] select-none transition-all duration-[900ms] animate-fade-in-blur">
+        {text || "..."}
+      </div>
+    </div>
+  );
+}
+
 // ================= 主应用 =================
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -239,16 +378,351 @@ export default function App() {
   const [bgImageError, setBgImageError] = useState(false);
   const [isStoryOpen, setIsStoryOpen] = useState(false); // 故事弹窗控制状态
 
-  // 集中化管理灯箱状态，支持缓慢淡出关闭的双重阶段控制
+  // 管理员后台核心控制状态
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [loginError, setLoginError] = useState(false);
+  const [adminTab, setAdminTab] = useState('gallery'); // 'gallery' | 'collection' | 'guestbook' | 'playlist'
+
+  // 编辑项目暂存状态
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editForm, setEditForm] = useState({ title: '', subtitle: '', image: '', desc: '', story: '', category: '' });
+
+  // 歌单音乐管理状态 & 同步歌词播放进度状态
+  const [activeSongIndex, setActiveSongIndex] = useState(0);
+  const [showMiniPlaylist, setShowMiniPlaylist] = useState(false); // 控制主页面迷你播放列表面板显隐
+  const [currentTime, setCurrentTime] = useState(0);
+
+  // 歌词自由拖拽浮动位移状态 (使用相对偏移量 offset，适配鼠标和触屏)
+  const [lyricOffset, setLyricOffset] = useState({ x: 0, y: 0 });
+  const isDraggingLyric = useRef(false);
+  const dragLyricStart = useRef({ x: 0, y: 0 });
+
+  // 1. 核心大画廊数据 state (本地持久化)
+  const [galleryItems, setGalleryItems] = useState(() => {
+    const saved = localStorage.getItem('kt_gallery_items');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 1,
+        title: "雪山之巅",
+        subtitle: "SNOW MOUNTAINS",
+        image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+        desc: "在海拔五千米的地方，呼吸冰冷的空气。寂静如坚冰，唯有风雪在低吟荒野的赞歌."
+      },
+      {
+        id: 2,
+        title: "城市边缘",
+        subtitle: "URBAN EDGE",
+        image: "https://images.unsplash.com/photo-1477959858617-6c0859641db1?auto=format&fit=crop&w=1200&q=80",
+        desc: "钢铁森林深处的暮色。余晖被切割成几何的切面，我们在白昼与黑夜的缝隙中寻找灵魂的落脚点."
+      },
+      {
+        id: 3,
+        title: "荒野回声",
+        subtitle: "WILDERNESS ECHO",
+        image: "https://images.unsplash.com/photo-1414441028751-2e650059c2bb?auto=format&fit=crop&w=1200&q=80",
+        desc: "雾气升腾的林间。光线如丝绸般穿透松针，那一刻，自然本身正在进行一场无声的呼吸."
+      },
+      {
+        id: 4,
+        title: "星辰大海",
+        subtitle: "STARRY OCEAN",
+        image: "https://images.unsplash.com/photo-1506744626753-1fa28f67ea1c?auto=format&fit=crop&w=1200&q=80",
+        desc: "黑夜的尽头，浪潮吞吐着星河的倒影。我们在无垠的宇宙与无尽的浪花中，见证永恒与刹那的重叠."
+      }
+    ];
+  });
+
+  // 2. 栅格图片集数据 state (本地持久化)
+  const [collectionPhotos, setCollectionPhotos] = useState(() => {
+    const saved = localStorage.getItem('kt_collection_photos');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: "photo-1",
+        title: "光阴小径",
+        category: "LANDSCAPE",
+        image: "https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1000&q=85",
+        subtitle: "WOODLAND PATHWAY",
+        story: "林深时见雾，溪深时见鹿。踩着带有露水的松针前行，每一步都是一首大自然的散文诗."
+      },
+      {
+        id: "photo-2",
+        title: "冷光漫延",
+        category: "CITY",
+        image: "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1000&q=85",
+        subtitle: "BLUE NEON LIGHTS",
+        story: "下雨后的城市霓虹，折射着孤寂的幽蓝。高架下的积水倒影，成了这个钢铁城市唯一的温床."
+      },
+      {
+        id: "photo-3",
+        title: "赤子微醺",
+        category: "DREAM",
+        image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1000&q=85",
+        subtitle: "CRIMSON SUNSET",
+        story: "天空倾洒了微醺的红葡萄酒。在那片绯红的虚无前，一叶扁舟仿佛已漂流了数个光纪."
+      },
+      {
+        id: "photo-4",
+        title: "凝止时钟",
+        category: "DREAM",
+        image: "https://images.unsplash.com/photo-1483168527879-c66136b56105?auto=format&fit=crop&w=1000&q=85",
+        subtitle: "THE UNIVERSE WATCH",
+        story: "繁星坠落成荒漠的极光。若将此刻写在明信片里，是否能永远拦截即将逝去的漫漫严寒？"
+      },
+      {
+        id: "photo-5",
+        title: "暮色回响",
+        category: "LANDSCAPE",
+        image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=85",
+        subtitle: "GOLDEN BREAKWATER",
+        story: "浪花在礁石上破灭成粉碎的白芒，那是夕阳沉入水底前，释放的最后一声回音."
+      },
+      {
+        id: "photo-6",
+        title: "交织星轨",
+        category: "CITY",
+        image: "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&w=1000&q=85",
+        subtitle: "COSMIC CONVERGENCE",
+        story: "快门极慢的曝光，将永恒的时间压缩在了一帧里。我们在闪烁的繁星轨道下，拥抱着静静入眠."
+      }
+    ];
+  });
+
+  // 3. 音乐播放列表 state (本地持久化)
+  const [songs, setSongs] = useState(() => {
+    const saved = localStorage.getItem('kt_playlist_songs');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 1,
+        title: "特别的人 (方大同)",
+        url: "https://mytuchuang.oss-cn-chengdu.aliyuncs.com/%E9%9F%B3%E4%B9%90/%E7%89%B9%E5%88%AB%E7%9A%84%E4%BA%BA-%E6%96%B9%E5%A4%A7%E5%90%8C%231D7Ie.mp3"
+      },
+      {
+        id: 2,
+        title: "Sugar (Maroon 5)",
+        url: "https://mytuchuang.oss-cn-chengdu.aliyuncs.com/%E9%9F%B3%E4%B9%90/Sugar-Maroon%205%23fAzGO.mp3"
+      },
+      {
+        id: 3,
+        title: "最佳损友 (陈奕迅)",
+        url: "https://mytuchuang.oss-cn-chengdu.aliyuncs.com/%E9%9F%B3%E4%B9%90/%E6%9C%80%E4%BD%B3%E6%8D%9F%E5%8F%8B-%E9%99%88%E5%A5%95%E8%BF%85%238UDt.mp3"
+      }
+    ];
+  });
+
+  // 4. 定制化高精度直连歌词库 (精准对齐阿里云 OSS 音轨时间点)
+  const songLyrics = {
+    1: [ // 方大同 - 特别的人 (精准毫秒级换算)
+      { time: 0.06, text: "特别的人 - 方大同" },
+      { time: 15.47, text: "爱一个人或许要慷慨" },
+      { time: 20.53, text: "若只想要被爱" },
+      { time: 22.82, text: "最后没有了对白" },
+      { time: 27.10, text: "必须有你我的情真" },
+      { time: 31.96, text: "不求计分的平等" },
+      { time: 34.77, text: "总有幸福有心疼" },
+      { time: 38.16, text: "生命的起伏要认可" },
+      { time: 42.88, text: "懂一个人也许要忍耐" },
+      { time: 47.97, text: "要经过了意外" },
+      { time: 50.18, text: "才了解所谓的爱" },
+      { time: 54.55, text: "今后的岁月" },
+      { time: 57.02, text: "让我们一起了解" },
+      { time: 60.46, text: "多少天长地久" },
+      { time: 63.45, text: "有几回细水长流" },
+      { time: 68.26, text: "我们是对方 特别的人" },
+      { time: 75.44, text: "奋不顾身 难舍难分" },
+      { time: 78.93, text: "不是一般人的认真" },
+      { time: 82.33, text: "若只有一天 爱一个人" },
+      { time: 89.13, text: "让那时间每一刻在倒退" },
+      { time: 93.40, text: "生命中有万事的可能" },
+      { time: 98.51, text: "你就是我要遇见的 特别的人" },
+      { time: 108.04, text: "懂一个人也许要忍耐" },
+      { time: 113.03, text: "要经过了意外" },
+      { time: 115.34, text: "才了解所谓的爱" },
+      { time: 119.65, text: "今后的岁月" },
+      { time: 122.18, text: "让我们一起了解" },
+      { time: 125.65, text: "多少天长地久" },
+      { time: 128.56, text: "有几回细水长流" },
+      { time: 133.42, text: "我们是对方 特别的人" },
+      { time: 140.58, text: "奋不顾身 难舍难分" },
+      { time: 144.02, text: "不是一般人的认真" },
+      { time: 147.42, text: "若只有一天 爱一个人" },
+      { time: 154.12, text: "让那时间每一刻在倒退" },
+      { time: 158.48, text: "生命中有万事的可能" },
+      { time: 163.68, text: "你就是我要遇见的 特别的人" },
+      { time: 170.61, text: "有时候我们都会寂寞" },
+      { time: 174.90, text: "有时也会失败 怕被淘汰" },
+      { time: 179.13, text: "想去找一个明白" },
+      { time: 182.33, text: "而我曾经多次的等待未来" },
+      { time: 188.78, text: "你何时会来" },
+      { time: 191.02, text: "人山人海 总有你的存在" },
+      { time: 196.36, text: "有你我的爱" },
+      { time: 198.75, text: "我们是对方 特别的人" },
+      { time: 205.73, text: "奋不顾身 难舍难分" },
+      { time: 209.22, text: "不是一般人的认真" },
+      { time: 212.60, text: "若只有一天 爱一个人" },
+      { time: 219.43, text: "让那时间每一刻在倒退" },
+      { time: 223.66, text: "生命中有万事的可能" },
+      { time: 228.78, text: "你就是我要遇见的 特别的人" }
+    ],
+    2: [ // Maroon 5 - Sugar
+      { time: 8.00, text: "I'm hurting baby, I'm broken down (我受伤了宝贝，我心碎了一地)" },
+      { time: 12.00, text: "I need your loving, loving (我需要你的爱)" },
+      { time: 14.00, text: "I need it now (我现在就要)" },
+      { time: 16.00, text: "When I'm without you (当我失去了你)" },
+      { time: 18.00, text: "I'm something weak (感觉像失去身体的一部分一样虚弱)" },
+      { time: 20.00, text: "You got me begging, begging (你让我苦苦乞求)" },
+      { time: 22.00, text: "I'm on my knees (我都给你跪了)" },
+      { time: 24.00, text: "I don't wanna be needing your love (我不想只是需要你的爱)" },
+      { time: 26.00, text: "I just wanna be deep in your love (我只想沉溺在你的爱中)" },
+      { time: 28.00, text: "And it's killing me when you're away (当你不在身边简直让我想死)" },
+      { time: 31.00, text: "Ooh baby,cause a bullet don't care where you are (因为你像子弹一样无情)" },
+      { time: 34.00, text: "I just wanna be there where you are (我只想到达你的所在地)" },
+      { time: 36.00, text: "And I gotta get one little taste (我要先浅尝一口)" },
+      { time: 39.00, text: "Sugar (糖甜心)" },
+      { time: 41.00, text: "Yes please (没错 请来吧)" },
+      { time: 43.00, text: "Won't you come and put it down on me (你要不要来我身边)" },
+      { time: 47.00, text: "Oh right here, cause I need (喔就是这里，因为我需要)" },
+      { time: 51.00, text: "Little love and little sympathy (一点爱与一点同情)" },
+      { time: 55.00, text: "Yeah you show me good loving (你就是爱的典范)" },
+      { time: 57.00, text: "Make it alright (你让一切变得完美)" },
+      { time: 59.00, text: "Need a little sweetness in my life (我的人生需要一点甜心)" },
+      { time: 63.00, text: "Sugar (糖甜心)" },
+      { time: 65.00, text: "Yes please (没错 请来吧)" },
+      { time: 67.00, text: "Won't you come and put it down on me (将甜蜜倒在我的身上)" },
+      { time: 72.00, text: "My broken pieces (我那破碎的心)" },
+      { time: 74.00, text: "You put them up (你将那些碎片拾起)" },
+      { time: 76.00, text: "Don't leave me hanging, hanging (别让我陷入迷惘之中)" },
+      { time: 78.00, text: "Come get me some (过来给我点糖)" },
+      { time: 80.00, text: "When I'm without ya (当你不在我身边)" },
+      { time: 82.00, text: "So insecure (是如此不安)" },
+      { time: 84.00, text: "You are the one thing, one thing (你是我唯一的执着)" },
+      { time: 86.00, text: "I'm never full (我永远渴望不够)" },
+      { time: 88.00, text: "I don't wanna be needing your love (我不想只是需要你的爱)" },
+      { time: 90.00, text: "I just wanna be deep in your love (我只想沉溺在你的爱中)" },
+      { time: 92.00, text: "And it's killing me when you're away (当你不在身边简直让我想死)" },
+      { time: 95.00, text: "Ooh baby,cause a bullet don't care where you are" },
+      { time: 98.00, text: "I just wanna be there where you are (我只想陪伴在你身边)" },
+      { time: 100.00, text: "And I gotta get one little taste (我要先浅尝一口)" },
+      { time: 103.00, text: "Sugar (糖甜心)" },
+      { time: 105.00, text: "Yes please (没错 请来吧)" },
+      { time: 107.00, text: "Won't you come and put it down on me (快来到我的身边)" },
+      { time: 111.00, text: "Oh right here, cause I need (喔就是这里，因为我需要)" },
+      { time: 115.00, text: "Little love and little sympathy (一点爱与一点同情)" },
+      { time: 119.00, text: "Yeah you show me good loving (你就是爱的典范)" },
+      { time: 121.00, text: "Make it alright (你让一切变得完美)" },
+      { time: 123.00, text: "Need a little sweetness in my life (我的人生需要一点甜心)" },
+      { time: 127.00, text: "Sugar (糖甜心)" },
+      { time: 129.00, text: "Yes please (没错 请来吧)" },
+      { time: 131.00, text: "Won't you come and put it down on me (将甜蜜倒在我的身上)" },
+      { time: 135.00, text: "Yeah (是啊)" },
+      { time: 136.00, text: "I want that red velvet (我想要那红丝绒蛋糕)" },
+      { time: 138.00, text: "I want that sugar sweet (我想要那极致的甜蜜)" },
+      { time: 140.00, text: "Don't let nobody touch it (不准任何人触碰)" },
+      { time: 142.00, text: "Unless that somebody is me (除非那个某人是我)" },
+      { time: 144.00, text: "I gotta be a man (我要变成男子汉)" },
+      { time: 146.00, text: "There ain't no other way (已无其他办法)" },
+      { time: 148.00, text: "Cause girl you're hotter than southern california bae (因为美眉你比南加州还要火辣)" },
+      { time: 152.00, text: "I don't wanna play no games (我不想玩任何没有结果的游戏)" },
+      { time: 154.00, text: "I don't gotta be afraid (我不想变得胆怯)" },
+      { time: 156.00, text: "Don't give all that shy sh-t (别管那些脸红心跳)" },
+      { time: 157.00, text: "No make up on, that's my... (没有任何伪妆，那就是我的...)" },
+      { time: 159.00, text: "Sugar (糖甜心)" },
+      { time: 161.00, text: "Yes please" },
+      { time: 163.00, text: "Won't you come and put it down on me" },
+      { time: 167.00, text: "Oh right here, cause I need" },
+      { time: 171.00, text: "Little love and little sympathy" },
+      { time: 175.00, text: "Yeah you show me good loving" },
+      { time: 177.00, text: "Make it alright" },
+      { time: 179.00, text: "Need a little sweetness in my life" },
+      { time: 183.00, text: "Sugar (糖甜心)" },
+      { time: 185.00, text: "Yes please" },
+      { time: 187.00, text: "Won't you come and put it down on me" },
+      { time: 191.00, text: "Sugar" },
+      { time: 193.00, text: "Yes please" },
+      { time: 195.00, text: "Won't you come and put it down on me" },
+      { time: 199.00, text: "Oh right here, cause I need" },
+      { time: 203.00, text: "Little love and little sympathy" },
+      { time: 207.00, text: "Yeah you show me good loving" },
+      { time: 209.00, text: "Make it alright" },
+      { time: 211.00, text: "Need a little sweetness in my life" },
+      { time: 215.00, text: "Sugar (糖甜心)" },
+      { time: 217.00, text: "Yes please" },
+      { time: 219.00, text: "Won't you come and put it down on me" }
+    ],
+    3: [ // 陈奕迅 - 最佳损友 (精准毫秒级换算)
+      { time: 0.00, text: "最佳损友 - 陈奕迅 (Eason Chan)" },
+      { time: 1.34, text: "朋友 我当你一秒朋友" },
+      { time: 6.96, text: "朋友 我当你一世朋友" },
+      { time: 13.58, text: "奇怪 过去再不堪回首" },
+      { time: 20.32, text: "怀缅 时时其实还有" },
+      { time: 26.98, text: "朋友 你试过将我营救" },
+      { time: 34.03, text: "朋友 你试过把我批斗" },
+      { time: 40.25, text: "无法 再与你交心联手" },
+      { time: 46.10, text: "毕竟 难得有过最佳损友" },
+      { time: 51.82, text: "从前共你 促膝把酒" },
+      { time: 54.89, text: "倾通宵都不够" },
+      { time: 56.54, text: "我有痛快过 你有没有" },
+      { time: 60.74, text: "很多东西今生只可给你" },
+      { time: 63.21, text: "保守至到永久" },
+      { time: 64.81, text: "别人如何明白透" },
+      { time: 67.23, text: "实实在在 踏入过我宇宙" },
+      { time: 69.76, text: "即使相处到 有个裂口" },
+      { time: 73.20, text: "命运决定了 以后再没法聚头" },
+      { time: 76.67, text: "但说过去 却那样厚" },
+      { time: 79.29, text: "问我有没有 确实也没有" },
+      { time: 82.68, text: "一直躲避的藉口 非什么大仇" },
+      { time: 86.04, text: "为何旧知己 在最后" },
+      { time: 89.31, text: "变不到老友" },
+      { time: 92.65, text: "不知你是我敌友 已没法望透" },
+      { time: 96.47, text: "被推着走 跟着生活流" },
+      { time: 99.42, text: "来年陌生的" },
+      { time: 101.43, text: "是昨日最亲的某某" },
+      { time: 110.63, text: "生死之交当天不知罕有" },
+      { time: 113.09, text: "到你变节了 至觉未够" },
+      { time: 117.21, text: "多想一天 彼此都不追究" },
+      { time: 119.75, text: "相邀再次喝酒" },
+      { time: 121.40, text: "待 葡萄成熟透" },
+      { time: 123.87, text: "但是命运入面 每个邂逅" },
+      { time: 126.46, text: "一起走到了 某个路口" },
+      { time: 129.71, text: "是敌与是友 各自也没有自由" },
+      { time: 133.31, text: "位置变了 各有队友" },
+      { time: 136.00, text: "问我有没有 确实也没有" },
+      { time: 139.37, text: "一直躲避的藉口 非什么大仇" },
+      { time: 142.65, text: "为何旧知己 在最后" },
+      { time: 145.96, text: "变不到老友" },
+      { time: 149.31, text: "不知你是我敌友 已没法望透" },
+      { time: 153.12, text: "被推着走 跟着生活流" },
+      { time: 156.05, text: "来年陌生的" },
+      { time: 157.93, text: "是昨日最亲的某某" },
+      { time: 161.50, text: "早知解散后 各自有际遇作导游" },
+      { time: 165.87, text: "奇就奇在 接受了 各自有路走" },
+      { time: 169.28, text: "却没人像你 让我 眼泪背着流" },
+      { time: 172.50, text: "严重似情侣 讲分手" },
+      { time: 189.99, text: "有没有 确实也没有" },
+      { time: 192.52, text: "一直躲避的藉口 非什么大仇" },
+      { time: 195.84, text: "为何旧知己 在最后 变不到老友" },
+      { time: 202.55, text: "不知你又有没有 挂念这旧友" },
+      { time: 206.34, text: "或者自己 早就想通透" },
+      { time: 209.20, text: "来年陌生的 是昨日 最亲的某某" },
+      { time: 214.61, text: "总好于 那日我 没有" },
+      { time: 219.65, text: "没有 遇过 某某" }
+    ]
+  };
+
+  // 集中化管理灯箱状态
   const [lightbox, setLightbox] = useState({
     isOpen: false,
-    isActive: false,   // 控制入场类，支持缓动 transition
-    type: null,        // 'gallery' | 'collection'
+    isActive: false,
+    type: null,
     item: null,
     index: null
   });
 
-  const [activePhotoCategory, setActivePhotoCategory] = useState('ALL'); // 筛选分类
+  const [activePhotoCategory, setActivePhotoCategory] = useState('ALL');
 
   // 留言板状态
   const [messages, setMessages] = useState([]);
@@ -270,7 +744,33 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 150);
 
-    // 加载本地存储的留言，如果为空则初始化经典文艺预设留言
+    // 智能检测并覆写更新旧测试音频路径
+    const savedSongs = localStorage.getItem('kt_playlist_songs');
+    if (savedSongs) {
+      const parsed = JSON.parse(savedSongs);
+      if (parsed.some(s => s.url.includes("pixabay.com") || s.title.includes("刘大同"))) {
+        const updatedDefaultSongs = [
+          {
+            id: 1,
+            title: "特别的人 (方大同)",
+            url: "https://mytuchuang.oss-cn-chengdu.aliyuncs.com/%E9%9F%B3%E4%B9%90/%E7%89%B9%E5%88%AB%E7%9A%84%E4%BA%BA-%E6%96%B9%E5%A4%A7%E5%90%8C%231D7Ie.mp3"
+          },
+          {
+            id: 2,
+            title: "Sugar (Maroon 5)",
+            url: "https://mytuchuang.oss-cn-chengdu.aliyuncs.com/%E9%9F%B3%E4%B9%90/Sugar-Maroon%205%23fAzGO.mp3"
+          },
+          {
+            id: 3,
+            title: "最佳损友 (陈奕迅)",
+            url: "https://mytuchuang.oss-cn-chengdu.aliyuncs.com/%E9%9F%B3%E4%B9%90/%E6%9C%80%E4%BD%B3%E6%8D%9F%E5%8F%8B-%E9%99%88%E5%A5%95%E8%BF%85%238UDt.mp3"
+          }
+        ];
+        setSongs(updatedDefaultSongs);
+        localStorage.setItem('kt_playlist_songs', JSON.stringify(updatedDefaultSongs));
+      }
+    }
+
     const localMsgs = localStorage.getItem('mc_gallery_messages');
     if (localMsgs) {
       setMessages(JSON.parse(localMsgs));
@@ -279,7 +779,7 @@ export default function App() {
         {
           id: 101,
           name: "季风过境",
-          text: "静静地看着雪花在雪山之巅上飞舞，听着轻柔的音乐，那一刻时空好像完全凝固了。摄影和音乐果然是人类打捞记忆最温柔的网，JINIAN，期待未来更多的闪光！",
+          text: "静静地看着雪花在雪山之巅上飞舞，听着轻柔的音乐，那一刻时空好像完全凝固了。摄影和音乐果然是人类打捞记忆最温柔的网，KTarch，期待未来更多的闪光！",
           time: "2026-05-24 19:42"
         },
         {
@@ -304,7 +804,7 @@ export default function App() {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target); // 触发后解绑以提升滚动性能
+          observer.unobserve(entry.target);
         }
       });
     }, observerOptions);
@@ -320,13 +820,26 @@ export default function App() {
     };
   }, []);
 
+  // 当切换背景音乐时，重新加载音频并清空播放秒数
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.load();
+      setCurrentTime(0);
+      if (isPlaying) {
+        audioRef.current.play().catch(err => {
+          console.warn("Autoplay block:", err);
+          setIsPlaying(false);
+        });
+      }
+    }
+  }, [activeSongIndex, songs]);
+
   // 监听键盘按键用于灯箱切换与退出
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!lightbox.isOpen) return;
       if (e.key === 'Escape') closeLightboxSilky();
 
-      // 只有在浏览 collection 图片集时才启用左右键切换
       if (lightbox.type === 'collection') {
         if (e.key === 'ArrowLeft') handlePrevPhoto();
         if (e.key === 'ArrowRight') handleNextPhoto();
@@ -335,6 +848,21 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightbox]);
+
+  // 计算当前正在播出的歌词内容
+  const getActiveLyricText = () => {
+    const currentSongId = songs[activeSongIndex]?.id;
+    const lyricList = songLyrics[currentSongId] || [];
+    let text = isPlaying ? "🎵 音乐已起奏..." : "BGM OFF - 留存指尖的温度";
+    for (let i = 0; i < lyricList.length; i++) {
+      if (currentTime >= lyricList[i].time) {
+        text = lyricList[i].text;
+      } else {
+        break;
+      }
+    }
+    return text;
+  };
 
   // 控制背景音乐
   const togglePlay = () => {
@@ -346,7 +874,7 @@ export default function App() {
       audioRef.current.play()
         .then(() => setIsPlaying(true))
         .catch((err) => {
-          console.warn("Autoplay was prevented. Click again to play.", err);
+          console.warn("Autoplay prevented:", err);
           setIsPlaying(false);
         });
     }
@@ -359,12 +887,9 @@ export default function App() {
     const hasNameError = !nickname.trim();
     const hasTextError = !content.trim();
 
-    // 触发边框红色反馈
     setFormError({ name: hasNameError, text: hasTextError });
 
-    if (hasNameError || hasTextError) {
-      return;
-    }
+    if (hasNameError || hasTextError) return;
 
     const formatTime = () => {
       const now = new Date();
@@ -388,96 +913,11 @@ export default function App() {
     setFormError({ name: false, text: false });
   };
 
-  // 高画质流式画廊数据
-  const galleryItems = [
-    {
-      id: 1,
-      title: "雪山之巅",
-      subtitle: "SNOW MOUNTAINS",
-      image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
-      desc: "在海拔五千米的地方，呼吸冰冷的空气。寂静如坚冰，唯有风雪在低吟荒野的赞歌."
-    },
-    {
-      id: 2,
-      title: "城市边缘",
-      subtitle: "URBAN EDGE",
-      image: "https://images.unsplash.com/photo-1477959858617-6c0859641db1?auto=format&fit=crop&w=1200&q=80",
-      desc: "钢铁森林深处的暮色。余晖被切割成几何的切面，我们在白昼与黑夜的缝隙中寻找灵魂的落脚点."
-    },
-    {
-      id: 3,
-      title: "荒野回声",
-      subtitle: "WILDERNESS ECHO",
-      image: "https://images.unsplash.com/photo-1414441028751-2e650059c2bb?auto=format&fit=crop&w=1200&q=80",
-      desc: "雾气升腾的林间。光线如丝绸般穿透松针，那一刻，自然本身正在进行一场无声的呼吸."
-    },
-    {
-      id: 4,
-      title: "星辰大海",
-      subtitle: "STARRY OCEAN",
-      image: "https://images.unsplash.com/photo-1506744626753-1fa28f67ea1c?auto=format&fit=crop&w=1200&q=80",
-      desc: "黑夜的尽头，浪潮吞吐着星河的倒影。我们在无垠的宇宙与无尽的浪花中，见证永恒与刹那的重叠."
-    }
-  ];
-
-  // 极具质感的多分类图片集数据 (3x2 栅格)
-  const collectionPhotos = [
-    {
-      id: "photo-1",
-      title: "光阴小径",
-      category: "LANDSCAPE",
-      image: "https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1000&q=85",
-      subtitle: "WOODLAND PATHWAY",
-      story: "林深时见雾，溪深时见鹿。踩着带有露水的松针前行，每一步都是一首大自然的散文诗."
-    },
-    {
-      id: "photo-2",
-      title: "冷光漫延",
-      category: "CITY",
-      image: "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1000&q=85",
-      subtitle: "BLUE NEON LIGHTS",
-      story: "下雨后的城市霓虹，折射着孤寂的幽蓝。高架下的积水倒影，成了这个钢铁城市唯一的温床."
-    },
-    {
-      id: "photo-3",
-      title: "赤子微醺",
-      category: "DREAM",
-      image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1000&q=85",
-      subtitle: "CRIMSON SUNSET",
-      story: "天空倾洒了微醺的红葡萄酒。在那片绯红的虚无前，一叶扁舟仿佛已漂流了数个光纪."
-    },
-    {
-      id: "photo-4",
-      title: "凝止时钟",
-      category: "DREAM",
-      image: "https://images.unsplash.com/photo-1483168527879-c66136b56105?auto=format&fit=crop&w=1000&q=85",
-      subtitle: "THE UNIVERSE WATCH",
-      story: "繁星坠落成荒漠的极光。若将此刻写在明信片里，是否能永远拦截即将逝去的漫漫严寒？"
-    },
-    {
-      id: "photo-5",
-      title: "暮色回响",
-      category: "LANDSCAPE",
-      image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=85",
-      subtitle: "GOLDEN BREAKWATER",
-      story: "浪花在礁石上破灭成粉碎的白芒，那是夕阳沉入水底前，释放的最后一声回音."
-    },
-    {
-      id: "photo-6",
-      title: "交织星轨",
-      category: "CITY",
-      image: "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&w=1000&q=85",
-      subtitle: "COSMIC CONVERGENCE",
-      story: "快门极慢的曝光，将永恒的时间压缩在了一帧里。我们在闪烁的繁星轨道下，拥抱着静静入眠."
-    }
-  ];
-
   // 过滤后的图片集
   const filteredPhotos = activePhotoCategory === 'ALL'
     ? collectionPhotos
     : collectionPhotos.filter(p => p.category === activePhotoCategory);
 
-  // 开启大图预览：双阶段渲染以支持入场 transition 动画（调慢 50%，动画执行时间 900ms，原为 600ms）
   const openLightboxSilky = (type, item = null, index = null) => {
     setLightbox({
       isOpen: true,
@@ -486,13 +926,11 @@ export default function App() {
       item,
       index
     });
-    // 微秒级延迟激活入场过渡
     setTimeout(() => {
       setLightbox(prev => ({ ...prev, isActive: true }));
     }, 50);
   };
 
-  // 关闭大图预览：双阶段退场（先执行折叠褪色动画，900ms 后销毁 DOM）
   const closeLightboxSilky = () => {
     setLightbox(prev => ({ ...prev, isActive: false }));
     setTimeout(() => {
@@ -503,24 +941,21 @@ export default function App() {
         item: null,
         index: null
       });
-    }, 900); // 慢放 50%：出场物理动效时间设为 900ms
+    }, 900);
   };
 
-  // 灯箱切换：前一张
   const handlePrevPhoto = () => {
     if (lightbox.type !== 'collection') return;
     const nextIndex = lightbox.index === 0 ? filteredPhotos.length - 1 : lightbox.index - 1;
     setLightbox(prev => ({ ...prev, index: nextIndex }));
   };
 
-  // 灯箱切换：后一张
   const handleNextPhoto = () => {
     if (lightbox.type !== 'collection') return;
     const nextIndex = lightbox.index === filteredPhotos.length - 1 ? 0 : lightbox.index + 1;
     setLightbox(prev => ({ ...prev, index: nextIndex }));
   };
 
-  // 根据当前灯箱状态获取正在预览的相片
   const getActivePreviewData = () => {
     if (!lightbox.isOpen) return null;
     if (lightbox.type === 'gallery') {
@@ -531,11 +966,186 @@ export default function App() {
 
   const previewData = getActivePreviewData();
 
+  // ================= 拖拽歌词面板处理生命周期 (双触适配) =================
+  const handleDragStart = (e) => {
+    if (e.target.closest('button')) return;
+    isDraggingLyric.current = true;
+
+    const clientX = e.clientX || e.touches?.[0]?.clientX;
+    const clientY = e.clientY || e.touches?.[0]?.clientY;
+
+    dragLyricStart.current = {
+      x: clientX - lyricOffset.x,
+      y: clientY - lyricOffset.y
+    };
+
+    if (e.type === 'touchstart') {
+      document.addEventListener('touchmove', handleDragMove, { passive: false });
+      document.addEventListener('touchend', handleDragEnd);
+    } else {
+      document.addEventListener('mousemove', handleDragMove);
+      document.addEventListener('mouseup', handleDragEnd);
+    }
+  };
+
+  const handleDragMove = (e) => {
+    if (!isDraggingLyric.current) return;
+
+    const clientX = e.clientX || e.touches?.[0]?.clientX;
+    const clientY = e.clientY || e.touches?.[0]?.clientY;
+
+    const newX = clientX - dragLyricStart.current.x;
+    const newY = clientY - dragLyricStart.current.y;
+
+    setLyricOffset({ x: newX, y: newY });
+
+    if (e.type === 'touchmove') {
+      e.preventDefault();
+    }
+  };
+
+  const handleDragEnd = () => {
+    isDraggingLyric.current = false;
+    document.removeEventListener('mousemove', handleDragMove);
+    document.removeEventListener('mouseup', handleDragEnd);
+    document.removeEventListener('touchmove', handleDragMove);
+    document.removeEventListener('touchend', handleDragEnd);
+  };
+
+  // ================= 管理员后台控制控制面板接口 =================
+  const handleAdminLogin = (e) => {
+    e.preventDefault();
+    if (adminPassword === 'ktarch666') {
+      setIsAdminAuthenticated(true);
+      setLoginError(false);
+      setAdminPassword('');
+    } else {
+      setLoginError(true);
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdminAuthenticated(false);
+    setIsAdminOpen(false);
+  };
+
+  const startEditing = (item) => {
+    setEditingItemId(item.id);
+    setEditForm({
+      title: item.title || '',
+      subtitle: item.subtitle || '',
+      image: item.image || '',
+      desc: item.desc || '',
+      story: item.story || '',
+      category: item.category || ''
+    });
+  };
+
+  const saveGalleryEdit = (id) => {
+    const updated = galleryItems.map(item => {
+      if (item.id === id) {
+        return { ...item, ...editForm };
+      }
+      return item;
+    });
+    setGalleryItems(updated);
+    localStorage.setItem('kt_gallery_items', JSON.stringify(updated));
+    setEditingItemId(null);
+  };
+
+  const saveCollectionEdit = (id) => {
+    const updated = collectionPhotos.map(item => {
+      if (item.id === id) {
+        return { ...item, ...editForm };
+      }
+      return item;
+    });
+    setCollectionPhotos(updated);
+    localStorage.setItem('kt_collection_photos', JSON.stringify(updated));
+    setEditingItemId(null);
+  };
+
+  const addNewCollectionPhoto = () => {
+    const newPhoto = {
+      id: 'photo-' + Date.now(),
+      title: "未命名瞬间",
+      subtitle: "NEW SPARK",
+      category: "LANDSCAPE",
+      image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1000&q=85",
+      story: "在此编辑关于它的温热叙事..."
+    };
+    const updated = [...collectionPhotos, newPhoto];
+    setCollectionPhotos(updated);
+    localStorage.setItem('kt_collection_photos', JSON.stringify(updated));
+    startEditing(newPhoto);
+  };
+
+  const deleteCollectionPhoto = (id) => {
+    const updated = collectionPhotos.filter(item => item.id !== id);
+    setCollectionPhotos(updated);
+    localStorage.setItem('kt_collection_photos', JSON.stringify(updated));
+  };
+
+  const deleteGuestMessage = (id) => {
+    const updated = messages.filter(item => item.id !== id);
+    setMessages(updated);
+    localStorage.setItem('mc_gallery_messages', JSON.stringify(updated));
+  };
+
+  const [newSongTitle, setNewSongTitle] = useState('');
+  const [newSongUrl, setNewSongUrl] = useState('');
+  const addNewSong = (e) => {
+    e.preventDefault();
+    if (!newSongTitle.trim() || !newSongUrl.trim()) return;
+    const newSong = {
+      id: Date.now(),
+      title: newSongTitle.trim(),
+      url: newSongUrl.trim()
+    };
+    const updated = [...songs, newSong];
+    setSongs(updated);
+    localStorage.setItem('kt_playlist_songs', JSON.stringify(updated));
+    setNewSongTitle('');
+    setNewSongUrl('');
+  };
+
+  const deleteSong = (id) => {
+    if (songs.length <= 1) return;
+    const updated = songs.filter(item => item.id !== id);
+    setSongs(updated);
+    localStorage.setItem('kt_playlist_songs', JSON.stringify(updated));
+    if (activeSongIndex >= updated.length) {
+      setActiveSongIndex(0);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#03050a] text-white selection:bg-indigo-900 selection:text-indigo-200 overflow-x-hidden">
 
-      {/* 慢速过渡和动画样式（调慢 50%，确保极其深邃幽雅的沉浸式体验） */}
+      {/* 嵌入奢侈品画报宋体及手书歌词体 */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@300;400;500;700&family=Noto+Serif+SC:wght@200;300;400;500;700&family=ZCOOL+XiaoWei&family=Inter:wght@100;200;300;400&display=swap');
+
+        /* 1. 奢侈品画报体 (全站核心艺术字体) */
+        .font-artistic {
+          font-family: 'Cinzel', 'Noto Serif SC', 'STSong', 'Songti SC', serif;
+        }
+
+        /* 2. 空灵手书感歌词体 */
+        .font-lyrics {
+          font-family: 'ZCOOL XiaoWei', 'Noto Serif SC', 'STSong', serif;
+        }
+
+        /* 3. 干净易读 UI 界面辅助体 */
+        .font-ui {
+          font-family: 'Inter', 'PingFang SC', -apple-system, sans-serif;
+        }
+
+        /* 默认主页应用高级艺术字体 */
+        body {
+          font-family: 'Cinzel', 'Noto Serif SC', serif;
+        }
+
         ::-webkit-scrollbar {
           width: 5px;
         }
@@ -550,7 +1160,6 @@ export default function App() {
           background: #222e4d;
         }
 
-        /* 故事/留言/灯箱专用高级轻量滚动条 */
         .story-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
@@ -565,7 +1174,6 @@ export default function App() {
           background: rgba(255, 255, 255, 0.3);
         }
 
-        /* 首屏加载动效（调慢 50%，从原 1.8s 改为 2.7s） */
         .fade-up-init {
           opacity: 0;
           transform: translateY(25px);
@@ -576,7 +1184,6 @@ export default function App() {
           transform: translateY(0);
         }
 
-        /* 滚动渐入动效（调慢 50%，从原 1.4s 改为 2.1s） */
         .reveal-section {
           opacity: 0;
           transform: translateY(50px);
@@ -588,7 +1195,6 @@ export default function App() {
           transform: translateY(0);
         }
 
-        /* 悬浮微调图片（调慢 50%，从原 2s 改为 3s） */
         .hover-zoom-img {
           transition: transform 3s cubic-bezier(0.16, 1, 0.3, 1), filter 3s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -597,8 +1203,6 @@ export default function App() {
           filter: saturate(1.1) brightness(1.05);
         }
 
-        /* ================== Apple-Style iOS 极其高级和慢速的过渡 ================== */
-        /* 灯箱遮罩层过渡动画（调慢 50%，延至 900ms，原为 600ms） */
         .lightbox-overlay {
           opacity: 0;
           backdrop-filter: blur(0px);
@@ -609,7 +1213,6 @@ export default function App() {
           backdrop-filter: blur(24px);
         }
 
-        /* 灯箱内容放大与模糊淡出（调慢 50%，延至 900ms，原为 600ms） */
         .lightbox-content {
           opacity: 0;
           transform: scale(0.95);
@@ -624,7 +1227,6 @@ export default function App() {
           filter: blur(0px);
         }
 
-        /* 灯箱文本底座平滑滑上（调慢 50%，延至 1200ms，原为 800ms） */
         .lightbox-card {
           opacity: 0;
           transform: translateY(25px);
@@ -635,7 +1237,14 @@ export default function App() {
           transform: translateY(0);
         }
 
-        /* 音乐盒粒子轻微律动 */
+        @keyframes fadeInBlur {
+          0% { opacity: 0; filter: blur(6px); transform: scale(0.98); }
+          100% { opacity: 1; filter: blur(0px); transform: scale(1); }
+        }
+        .animate-fade-in-blur {
+          animation: fadeInBlur 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
         @keyframes musicBounce {
           0%, 100% { height: 3px; }
           50% { height: 18px; }
@@ -652,7 +1261,7 @@ export default function App() {
       {/* ================= 1. 极致沉浸式电影感首屏 ================= */}
       <header className="relative w-full h-screen overflow-hidden flex items-center justify-center">
         <img
-          src={bgImageError ? "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=2000&q=85" : "db05a088f45ab1cd9cf81bec617acf8d.jpg"}
+          src={bgImageError ? "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80" : "db05a088f45ab1cd9cf81bec617acf8d.jpg"}
           alt="Media Center Core Memory"
           onError={() => setBgImageError(true)}
           className="absolute inset-0 w-full h-full object-cover z-0 transition-all duration-[1500ms]"
@@ -662,19 +1271,16 @@ export default function App() {
           }}
         />
 
-        {/* 渐进式遮罩层 */}
         <div className="absolute inset-0 bg-[#03050a]/30 z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-[#03050a]/10 via-[#03050a]/50 to-[#03050a] z-10"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0)_30%,rgba(3,5,10,0.8)_95%)] z-15 pointer-events-none"></div>
 
-        {/* 极简顶栏 */}
-        <nav className="absolute top-0 left-0 w-full px-6 py-6 md:px-12 flex justify-between items-center z-30">
+        <nav className="absolute top-0 left-0 w-full px-6 py-6 md:px-12 flex justify-between items-center z-30 font-artistic">
           <div className="flex items-center gap-2 tracking-[0.3em] text-xs font-light text-white/70">
             <FilmIcon className="w-4 h-4 text-indigo-400" />
-            <span>M.C. MEMORY</span>
+            <span>KT. MEMORY</span>
           </div>
-          {/* 右上角高感知 iOS STORY 按钮 */}
-          <div className="flex items-center z-30">
+          <div className="flex items-center z-30 font-ui">
             <button
               onClick={() => setIsStoryOpen(true)}
               className="px-5 py-2 bg-white/[0.04] backdrop-blur-md border border-white/10 hover:bg-white/[0.12] hover:border-white/25 active:scale-95 text-white/90 hover:text-white rounded-full transition-all duration-500 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] text-[10px] tracking-[0.2em] font-light select-none"
@@ -684,8 +1290,7 @@ export default function App() {
           </div>
         </nav>
 
-        {/* 核心排版 */}
-        <div className="relative z-20 flex flex-col items-center text-center w-full px-6 select-none">
+        <div className="relative z-20 flex flex-col items-center text-center w-full px-6 select-none font-artistic">
           <div className={`text-xs md:text-sm tracking-[0.45em] text-indigo-300/80 mb-5 font-light uppercase fade-up-init ${isLoaded ? 'loaded' : ''}`} style={{ transitionDelay: '100ms' }}>
             欢迎来到属于传媒中心的记忆画廊
           </div>
@@ -697,13 +1302,12 @@ export default function App() {
             <div className="flex items-center gap-4 w-full justify-center">
               <div className="h-[1px] w-6 bg-white/20"></div>
               <span className="text-[10px] md:text-xs tracking-[0.5em] font-light text-white/50 uppercase">
-                DESIGNED BY JINIAN
+                DESIGNED BY KTarch
               </span>
               <div className="h-[1px] w-6 bg-white/20"></div>
             </div>
           </div>
 
-          {/* 下滑引导提示 */}
           <div className={`absolute -bottom-24 md:-bottom-28 flex flex-col items-center gap-3 fade-up-init ${isLoaded ? 'loaded' : ''}`} style={{ transitionDelay: '900ms' }}>
             <span className="text-[9px] tracking-[0.3em] text-white/40 uppercase">Scroll to Explore</span>
             <ChevronDownIcon className="w-4 h-4 text-white/30 animate-bounce" />
@@ -712,7 +1316,7 @@ export default function App() {
       </header>
 
       {/* ================= 2. 经典作品画廊区 ================= */}
-      <main className="relative z-20 bg-[#03050a] pt-24 pb-20 px-6 md:px-12 max-w-[1440px] mx-auto">
+      <main className="relative z-20 bg-[#03050a] pt-24 pb-20 px-6 md:px-12 max-w-[1440px] mx-auto font-artistic">
         <div className="text-center mb-32 reveal-section" ref={addToRefs}>
           <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/5 border border-white/5">
             <CameraIcon className="w-3.5 h-3.5 text-indigo-400" />
@@ -724,7 +1328,6 @@ export default function App() {
           </p>
         </div>
 
-        {/* 画廊大图列表 */}
         <div className="flex flex-col gap-32 md:gap-48">
           {galleryItems.map((item, index) => (
             <section
@@ -732,7 +1335,6 @@ export default function App() {
               ref={addToRefs}
               className={`reveal-section flex flex-col ${index % 2 !== 0 ? 'lg:flex-row-reverse' : 'lg:flex-row'} items-center gap-10 lg:gap-20 w-full`}
             >
-              {/* 精美画幅展示 - 已添加点击放大效果 */}
               <div
                 onClick={() => openLightboxSilky('gallery', item)}
                 className="w-full lg:w-[62%] img-container overflow-hidden relative rounded-lg group shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] border border-white/5 cursor-zoom-in"
@@ -744,15 +1346,13 @@ export default function App() {
                     className="w-full h-full object-cover hover-zoom-img opacity-85 group-hover:opacity-100 transition-opacity duration-1000"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
-
-                  <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded text-[10px] tracking-widest text-white/70">
+                  <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded text-[10px] tracking-widest text-white/70 font-ui">
                     <CompassIcon className="w-3.5 h-3.5 text-indigo-400 animate-[spin_8s_linear_infinite]" />
                     <span>CLICK TO ENLARGE</span>
                   </div>
                 </div>
               </div>
 
-              {/* 艺术文案与意境区 */}
               <div className="w-full lg:w-[38%] flex flex-col justify-center">
                 <span className="text-[10px] tracking-[0.35em] text-indigo-400 font-medium mb-3 block uppercase">
                   {item.subtitle}
@@ -773,7 +1373,7 @@ export default function App() {
       {/* ================= 3. 光影碎刻·图片集 ================= */}
       <section
         ref={addToRefs}
-        className="relative z-20 bg-[#03050a] py-24 px-6 md:px-12 max-w-[1440px] mx-auto reveal-section"
+        className="relative z-20 bg-[#03050a] py-24 px-6 md:px-12 max-w-[1440px] mx-auto reveal-section font-artistic"
       >
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/5 border border-white/5">
@@ -783,8 +1383,7 @@ export default function App() {
           <h2 className="text-2xl md:text-4xl font-light tracking-[0.2em] text-white/90">光影碎刻</h2>
           <p className="text-xs md:text-sm font-light text-white/40 mt-3 tracking-wider">指尖轻启，拼凑往昔失散的时光拼图</p>
 
-          {/* iOS 玻璃质感分类控制阀 */}
-          <div className="flex justify-center gap-2 mt-8 md:mt-10 max-w-md mx-auto p-1 bg-white/[0.01] backdrop-blur-xl border border-white/5 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+          <div className="flex justify-center gap-2 mt-8 md:mt-10 max-w-md mx-auto p-1 bg-white/[0.01] backdrop-blur-xl border border-white/5 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)] font-ui">
             {['ALL', 'LANDSCAPE', 'CITY', 'DREAM'].map((cat) => (
               <button
                 key={cat}
@@ -801,7 +1400,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* 3x2 高响应度精美栅格图片集 - 已添加点击放大效果 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {filteredPhotos.map((photo, index) => (
             <div
@@ -809,28 +1407,23 @@ export default function App() {
               onClick={() => openLightboxSilky('collection', null, index)}
               className="group cursor-pointer bg-[#05070f] border border-white/5 rounded-xl overflow-hidden relative shadow-lg hover:shadow-2xl hover:shadow-indigo-500/5 transition-all duration-[1000ms] hover:-translate-y-1.5 cursor-zoom-in"
             >
-              {/* 高画质摄影画面 */}
               <div className="aspect-[4/3] w-full overflow-hidden relative">
                 <img
                   src={photo.image}
                   alt={photo.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[2.7s] cubic-bezier(0.16, 1, 0.3, 1) opacity-80 group-hover:opacity-100"
                 />
-
-                {/* 悬停微高光遮罩 */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#03050a]/95 via-transparent to-transparent opacity-90 transition-opacity duration-[1000ms]"></div>
                 <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-[1200ms] pointer-events-none"></div>
-
-                {/* 核心排版信息 */}
                 <div className="absolute inset-x-0 bottom-0 p-5 flex flex-col justify-end transform translate-y-2 group-hover:translate-y-0 transition-transform duration-[1000ms]">
                   <span className="text-[8px] tracking-[0.25em] text-indigo-400 font-medium uppercase mb-1 block">
                     {photo.subtitle}
                   </span>
                   <div className="flex justify-between items-baseline">
-                    <h3 className="text-base md:text-lg font-light tracking-widest text-white/95">
+                    <h3 className="text-base md:text-lg font-light tracking-widest text-white/95 text-ellipsis overflow-hidden">
                       {photo.title}
                     </h3>
-                    <span className="text-[9px] tracking-widest font-extralight text-white/30 group-hover:text-white/60 transition-colors duration-[1000ms]">
+                    <span className="text-[9px] tracking-widest font-extralight text-white/30 group-hover:text-white/60 transition-colors duration-[1000ms] font-ui shrink-0">
                       ZOOM IN →
                     </span>
                   </div>
@@ -841,32 +1434,27 @@ export default function App() {
         </div>
       </section>
 
-      {/* ================= 3.1 沉浸式 iOS 通用高阶模糊灯箱 (Universal Lightbox Modal) ================= */}
+      {/* ================= 3.1 沉浸式 iOS 通用高阶模糊灯箱 ================= */}
       {lightbox.isOpen && previewData && (
         <div
           className={`fixed inset-0 z-50 flex flex-col items-center justify-center p-4 md:p-8 select-none lightbox-overlay ${
             lightbox.isActive ? 'active' : ''
-          }`}
+          } font-artistic`}
         >
-          {/* 超重度毛玻璃暗化遮罩（点击即可返回画廊） */}
           <div
             className="absolute inset-0 bg-[#03050a]/90 cursor-pointer"
             onClick={closeLightboxSilky}
           ></div>
 
-          {/* 主关闭按钮（右上角 iOS 磨砂悬浮） */}
           <button
             onClick={closeLightboxSilky}
-            className="absolute top-6 right-6 md:top-8 md:right-8 z-50 p-2.5 bg-white/[0.05] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 rounded-full text-white/70 hover:text-white transition-all duration-[750ms] shadow-xl active:scale-90"
+            className="absolute top-6 right-6 md:top-8 md:right-8 z-50 p-2.5 bg-white/[0.05] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 rounded-full text-white/70 hover:text-white transition-all duration-[750ms] shadow-xl active:scale-90 font-ui"
             title="关闭 (Esc)"
           >
             <CloseIcon className="w-5 h-5" />
           </button>
 
-          {/* 核心内容容器 */}
           <div className="relative z-10 w-full max-w-4xl flex flex-col items-center gap-6 md:gap-8">
-
-            {/* 顶栏：如果是图片集则显示相片序列，主画廊则只显示画廊标记 */}
             <div className={`flex items-center gap-3 px-4 py-1.5 bg-white/[0.03] backdrop-blur-xl border border-white/5 rounded-full text-[10px] tracking-[0.2em] font-light text-white/50 shadow-sm lightbox-card ${
               lightbox.isActive ? 'active' : ''
             }`}>
@@ -879,21 +1467,17 @@ export default function App() {
               )}
             </div>
 
-            {/* 相片主体交互区 */}
             <div className="relative w-full flex items-center justify-center group/viewer max-h-[60vh]">
-
-              {/* 左切图按钮（仅对 collection 类型生效） */}
               {lightbox.type === 'collection' && (
                 <button
                   onClick={handlePrevPhoto}
-                  className="absolute left-2 md:-left-16 z-30 p-3 bg-black/40 hover:bg-white/[0.08] border border-white/5 hover:border-white/15 rounded-full text-white/50 hover:text-white opacity-0 group-hover/viewer:opacity-100 md:opacity-100 transition-all duration-[750ms] shadow-2xl active:scale-90"
+                  className="absolute left-2 md:-left-16 z-30 p-3 bg-black/40 hover:bg-white/[0.08] border border-white/5 hover:border-white/15 rounded-full text-white/50 hover:text-white opacity-0 group-hover/viewer:opacity-100 md:opacity-100 transition-all duration-[750ms] shadow-2xl active:scale-90 font-ui"
                   title="上一张 (←)"
                 >
                   <ArrowLeftIcon className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               )}
 
-              {/* 大图展示：iOS 软渲染边框与深渊阴影 */}
               <div
                 className={`overflow-hidden rounded-xl border border-white/10 shadow-[0_32px_96px_rgba(0,0,0,0.85)] max-w-full max-h-[55vh] cursor-zoom-out lightbox-content ${
                   lightbox.isActive ? 'active' : ''
@@ -907,20 +1491,17 @@ export default function App() {
                 />
               </div>
 
-              {/* 右切图按钮（仅对 collection 类型生效） */}
               {lightbox.type === 'collection' && (
                 <button
                   onClick={handleNextPhoto}
-                  className="absolute right-2 md:-right-16 z-30 p-3 bg-black/40 hover:bg-white/[0.08] border border-white/5 hover:border-white/15 rounded-full text-white/50 hover:text-white opacity-0 group-hover/viewer:opacity-100 md:opacity-100 transition-all duration-[750ms] shadow-2xl active:scale-90"
+                  className="absolute right-2 md:-right-16 z-30 p-3 bg-black/40 hover:bg-white/[0.08] border border-white/5 hover:border-white/15 rounded-full text-white/50 hover:text-white opacity-0 group-hover/viewer:opacity-100 md:opacity-100 transition-all duration-[750ms] shadow-2xl active:scale-90 font-ui"
                   title="下一张 (→)"
                 >
                   <ArrowRightIcon className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               )}
-
             </div>
 
-            {/* 底栏：iOS 磨砂玻璃叙事卡片 */}
             <div
               className={`w-full max-w-2xl bg-white/[0.02] backdrop-blur-2xl border border-white/10 p-5 md:p-6 rounded-2xl shadow-2xl text-center select-text lightbox-card ${
                 lightbox.isActive ? 'active' : ''
@@ -936,15 +1517,14 @@ export default function App() {
                 "{lightbox.type === 'collection' ? (previewData.story || '写给风雪的一行散文诗') : (previewData.desc || '定格的光影瞬间')}"
               </p>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* ================= 4. 极具 iOS 玻璃质感的留言印记区 ================= */}
+      {/* ================= 4. 留言印记区 ================= */}
       <section
         ref={addToRefs}
-        className="relative z-20 bg-[#03050a] py-24 px-6 md:px-12 max-w-[1000px] mx-auto reveal-section"
+        className="relative z-20 bg-[#03050a] py-24 px-6 md:px-12 max-w-[1000px] mx-auto reveal-section font-artistic"
       >
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/5 border border-white/5">
@@ -956,13 +1536,12 @@ export default function App() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* 左侧：留言表单 */}
           <form
             onSubmit={handleMessageSubmit}
-            className="lg:col-span-5 bg-white/[0.015] backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-[0_16px_48px_rgba(0,0,0,0.5)] flex flex-col gap-5"
+            className="lg:col-span-5 bg-white/[0.015] backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-[0_16px_48px_rgba(0,0,0,0.5)] flex flex-col gap-5 font-ui"
           >
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] tracking-[0.2em] font-light text-white/50 uppercase">署名 SIGNATURE</label>
+              <label className="text-[10px] tracking-[0.2em] font-light text-white/50 uppercase font-artistic">署名 SIGNATURE</label>
               <input
                 type="text"
                 maxLength="12"
@@ -979,7 +1558,7 @@ export default function App() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] tracking-[0.2em] font-light text-white/50 uppercase">话语 SPARKS</label>
+              <label className="text-[10px] tracking-[0.2em] font-light text-white/50 uppercase font-artistic">话语 SPARKS</label>
               <textarea
                 rows="4"
                 maxLength="200"
@@ -1004,7 +1583,6 @@ export default function App() {
             </button>
           </form>
 
-          {/* 右侧：留言列表 */}
           <div className="lg:col-span-7 space-y-4 max-h-[420px] overflow-y-auto pr-2 story-scrollbar">
             {messages.length === 0 ? (
               <div className="h-full flex items-center justify-center py-20 text-xs font-light text-white/30 tracking-widest border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
@@ -1016,8 +1594,8 @@ export default function App() {
                   key={msg.id}
                   className="bg-white/[0.01] backdrop-blur-md border border-white/5 hover:border-white/12 p-5 rounded-xl transition-all duration-[750ms] flex flex-col gap-2 shadow-sm animate-ai-card"
                 >
-                  <div className="flex justify-between items-center border-b border-white/[0.03] pb-2">
-                    <span className="text-xs font-light tracking-widest text-indigo-300">{msg.name}</span>
+                  <div className="flex justify-between items-center border-b border-white/[0.03] pb-2 font-ui">
+                    <span className="text-xs font-light tracking-widest text-indigo-300 font-artistic">{msg.name}</span>
                     <span className="text-[9px] font-light text-white/20">{msg.time}</span>
                   </div>
                   <p className="text-xs md:text-sm font-light text-white/60 leading-relaxed tracking-wide">
@@ -1030,58 +1608,129 @@ export default function App() {
         </div>
       </section>
 
-      {/* ================= 5. 沉浸式微缩黑胶音乐盒 (唱机样式) ================= */}
-      <div className="fixed bottom-8 right-6 md:right-12 z-50 flex flex-col items-end">
+      {/* ================= 4.1 歌词同步律动面板 ================= */}
+      <div
+        onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
+        className="fixed bottom-32 left-1/2 z-40 w-[92%] max-w-xl text-center select-none flex items-center justify-center transition-shadow duration-[1000ms]"
+        style={{
+          transform: `translate(calc(-50% + ${lyricOffset.x}px), ${lyricOffset.y}px)`,
+          cursor: isDraggingLyric.current ? 'grabbing' : 'grab',
+          touchAction: 'none'
+        }}
+      >
+        <div className="w-full bg-[#05070f]/40 backdrop-blur-xl border border-white/10 rounded-2xl px-2 shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:border-white/15 hover:bg-white/[0.02] transition-all duration-500">
+          <ParticleLyrics text={getActiveLyricText()} />
+        </div>
+      </div>
+
+      {/* ================= 5. 黑胶音乐盒 ================= */}
+      <div className="fixed bottom-8 right-6 md:right-12 z-50 flex flex-col items-end font-ui">
+
+        {showMiniPlaylist && (
+          <div className="mb-3 bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 w-52 shadow-2xl animate-fade-in text-[10px] select-none text-left">
+            <div className="flex justify-between items-center mb-2.5 pb-1.5 border-b border-white/5 text-white/50 uppercase tracking-[0.2em] font-light font-artistic">
+              <span>选择音轨</span>
+              <button
+                onClick={() => setShowMiniPlaylist(false)}
+                className="text-white/40 hover:text-white p-1"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1 story-scrollbar">
+              {songs.map((song, idx) => (
+                <button
+                  key={song.id}
+                  onClick={() => {
+                    setActiveSongIndex(idx);
+                    setIsPlaying(true);
+                  }}
+                  className={`w-full text-left p-2 rounded-lg transition-all truncate tracking-wider font-light flex items-center justify-between ${
+                    activeSongIndex === idx
+                      ? 'bg-indigo-600/25 text-indigo-200 border-l-2 border-indigo-500 font-medium shadow-inner'
+                      : 'text-white/60 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span className="truncate">{idx + 1}. {song.title}</span>
+                  {activeSongIndex === idx && <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse shrink-0 ml-1"></span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <audio
           ref={audioRef}
           loop
-          src="/最佳损友-陈奕迅#8UDt.mp3"
+          src={songs[activeSongIndex]?.url}
+          onTimeUpdate={() => {
+            if (audioRef.current) {
+              setCurrentTime(audioRef.current.currentTime);
+            }
+          }}
         />
 
-        {/* 上方微型发光提示气泡 */}
         <div
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-full border border-white/5 bg-black/60 backdrop-blur-md text-[8px] tracking-wider text-white/70 transition-all duration-[1000ms] ease-out select-none shadow-[0_6px_16px_rgba(0,0,0,0.5)] mb-1.5 mr-1.5 ${
+          className={`flex flex-col items-end gap-1 select-none transition-all duration-[1000ms] ease-out mt-2 mr-1.5 ${
             isPlaying
               ? 'opacity-0 translate-y-3 pointer-events-none'
-              : 'opacity-100 translate-y-0 animate-pulse'
+              : 'opacity-100 translate-y-0'
           }`}
         >
-          <span className="w-1 h-1 rounded-full bg-indigo-400 animate-ping"></span>
-          <span>点击播放音乐</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/5 bg-black/60 backdrop-blur-md text-[8px] tracking-wider text-white/60 shadow-[0_6px_16px_rgba(0,0,0,0.5)] animate-pulse">
+            <span className="w-1 h-1 rounded-full bg-indigo-400 animate-ping"></span>
+            <span>点击播放背景音乐</span>
+          </div>
+          {songs[activeSongIndex] && (
+            <span className="text-[7px] text-white/30 tracking-widest uppercase mr-1 mt-0.5 max-w-[120px] truncate font-artistic">
+              {songs[activeSongIndex].title}
+            </span>
+          )}
         </div>
 
-        {/* 拟真黑胶质感唱片音乐盒 - 缩放 70% 包裹层 */}
-        <div className="origin-bottom-right transform scale-[0.7]">
+        <div className="origin-bottom-right transform scale-[0.7] flex items-center gap-3">
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMiniPlaylist(!showMiniPlaylist);
+            }}
+            className="w-16 h-16 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-950/90 border border-white/10 hover:border-indigo-500/30 flex items-center justify-center cursor-pointer select-none transition-all duration-300 shadow-[0_16px_40px_rgba(0,0,0,0.7)] hover:scale-[1.05]"
+            title="曲目列表"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-white/60 hover:text-indigo-400">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+          </button>
+
           <div
             onClick={togglePlay}
             className="relative w-16 h-16 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-950/90 border border-white/10 hover:border-indigo-500/30 flex items-center justify-center cursor-pointer select-none transition-all duration-500 shadow-[0_16px_40px_rgba(0,0,0,0.7)] group hover:scale-[1.05]"
             title={isPlaying ? "点击暂停" : "点击播放背景音乐"}
           >
-            {/* 唱片槽圆腔底盘 */}
             <div className="w-13 h-13 rounded-full bg-neutral-900 border border-black flex items-center justify-center shadow-inner relative overflow-hidden">
-
-              {/* 黑胶唱片 (Vinyl Disc) */}
               <div
                 className={`w-11 h-11 rounded-full bg-neutral-950 flex items-center justify-center relative shadow-[0_2px_8px_rgba(0,0,0,0.8)] border border-neutral-800/50 ${
                   isPlaying ? 'animate-[spin_6s_linear_infinite]' : 'transition-transform duration-1000'
                 }`}
               >
-                {/* 同心凹槽声道线 */}
                 <div className="absolute inset-1 rounded-full border border-neutral-900/60 opacity-80"></div>
                 <div className="absolute inset-2 rounded-full border border-neutral-900/40 opacity-65"></div>
                 <div className="absolute inset-3 rounded-full border border-neutral-900/30 opacity-50"></div>
-
-                {/* 唱片贴纸 */}
                 <div className="w-4.5 h-4.5 rounded-full bg-indigo-600/90 border border-neutral-950 flex items-center justify-center">
                   <div className="w-1.5 h-1.5 rounded-full bg-neutral-300 shadow"></div>
                 </div>
               </div>
             </div>
 
-            {/* 动态唱针 */}
             <ToneArm isPlaying={isPlaying} />
 
-            {/* 悬停状态指示 */}
             <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10 backdrop-blur-[1px]">
               {isPlaying ? (
                 <PauseIcon className="w-5 h-5 text-indigo-400" />
@@ -1090,75 +1739,60 @@ export default function App() {
               )}
             </div>
           </div>
+
         </div>
       </div>
 
-      {/* ================= 6. 沉浸式磨砂微光 iOS 风格故事弹窗 ================= */}
+      {/* ================= 6. 故事弹窗 ================= */}
       <div
         className={`fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 transition-all duration-[1000ms] ${
           isStoryOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+        } font-artistic`}
       >
-        {/* 背景超重度模糊暗化遮罩（点击即可退回画廊） */}
         <div
           className="absolute inset-0 bg-[#03050a]/85 backdrop-blur-2xl"
           onClick={() => setIsStoryOpen(false)}
         ></div>
 
-        {/* 故事主卡片：纯正 iOS 玻璃质感面板 */}
         <div
           className={`relative w-full max-w-3xl bg-white/[0.03] border border-white/10 rounded-2xl md:rounded-3xl p-6 md:p-12 shadow-[0_32px_120px_rgba(0,0,0,0.8)] backdrop-blur-2xl transition-all duration-[1000ms] transform ${
             isStoryOpen ? 'translate-y-0 scale-100' : 'translate-y-12 scale-95'
           }`}
         >
-          {/* 顶栏 */}
           <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
             <div className="flex items-center gap-2 text-white/40 text-[9px] md:text-[10px] tracking-[0.3em] font-light">
               <FilmIcon className="w-3.5 h-3.5 text-indigo-400" />
               <span>THE STORIES WE HOLD</span>
             </div>
-
-            {/* iOS 返回按钮 */}
             <button
               onClick={() => setIsStoryOpen(false)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/[0.05] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 active:scale-95 transition-all duration-300 text-[10px] tracking-[0.25em] text-white/80 hover:text-white font-light select-none"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/[0.05] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 active:scale-95 transition-all duration-300 text-[10px] tracking-[0.25em] text-white/80 hover:text-white font-light select-none font-ui"
             >
               <span>← RETURN</span>
             </button>
           </div>
 
-          {/* 滚动文章区域 */}
           <div className="max-h-[60vh] md:max-h-[50vh] overflow-y-auto pr-4 space-y-6 md:space-y-8 story-scrollbar text-white/80">
             <h3 className="text-xl md:text-3xl font-light tracking-[0.15em] text-white/95 leading-normal">
               追光者的编年史：传媒中心背后的故事
             </h3>
-
             <p className="text-xs md:text-sm font-light leading-relaxed tracking-wider text-white/70">
-              这里是故事开始的地方，也是无数快门和指尖创意的聚集地。传媒中心不仅仅是一间摆满相机和电脑的工作室，更是一艘在时间星河里打捞记忆的飞船。
+              这里是故事开始的地方，也是无数快门和指尖创意的聚集地。传媒中心不仅仅是一间摆满相机 and 电脑的工作室，更是一艘在时间星河里打捞记忆的飞船。
             </p>
-
             <div className="space-y-4">
-              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">
-                第一章：快门与地平线
-              </h4>
+              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">第一章：快门与地平线</h4>
               <p className="text-xs md:text-sm font-light leading-relaxed tracking-wider text-white/60">
                 我们曾踏遍清晨五点的薄雾，也曾在深夜的钢铁城市边缘静静等待星辰破空。那些被相机捕获的瞬间——风雪肆虐的峰峦，或是钢铁森林里渐暗的暮色，都不止是图像本身，而是属于我们每一个拍摄者当时呼吸的声音。
               </p>
             </div>
-
             <div className="space-y-4">
-              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">
-                第二章：屏幕里的不眠夜
-              </h4>
+              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">第二章：屏幕里的不眠夜</h4>
               <p className="text-xs md:text-sm font-light leading-relaxed tracking-wider text-white/60">
-                在温热咖啡与冷光屏幕的微弱亮光中，无数帧画面在这里被反复打磨、拼接。那些欢笑、争论和深夜里因渲染成功而响起的低低欢呼，共同编织成名为「青春」的底片。在剪辑时间轴上的每一秒，都是我们在时间长河中刻下最深的痕迹。
+                在温热咖啡与冷光屏幕的微弱亮光中，无数帧画面在这里被反复打磨、拼接。那些欢笑、争论和深夜里因渲染成功而响起的低低欢呼，共同编织成名为「青春」的底片。在剪辑时间轴上的每一秒，都是我们在时间长河中刻下最深的痕痕迹。
               </p>
             </div>
-
             <div className="space-y-4">
-              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">
-                终章：帧的永恒
-              </h4>
+              <h4 className="text-xs md:text-sm font-medium tracking-widest text-indigo-300/90 uppercase">终章：帧的永恒</h4>
               <p className="text-xs md:text-sm font-light leading-relaxed tracking-wider text-white/60">
                 记忆画廊不会终结。每一位来到这里的人，都能透过这些跳动的光影和悠扬的音浪，看见那些曾经炽热、依然跳动的热忱。我们记录转瞬即逝的现在，只为向遥远的未来呈递一份不灭的赞歌。
               </p>
@@ -1167,15 +1801,243 @@ export default function App() {
         </div>
       </div>
 
-      {/* ================= 7. 极简艺术页脚 ================= */}
-      <footer className="bg-[#03050a] py-16 border-t border-white/[0.03] text-center" ref={addToRefs}>
+      {/* ================= 7. 管理员后台 ================= */}
+      {isAdminOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 select-none animate-fade-in font-ui">
+          <div
+            className="absolute inset-0 bg-[#03050a]/90 backdrop-blur-2xl cursor-pointer"
+            onClick={() => setIsAdminOpen(false)}
+          ></div>
+
+          <div className="relative z-10 w-full max-w-4xl bg-white/[0.02] border border-white/10 rounded-2xl p-6 md:p-8 shadow-[0_32px_120px_rgba(0,0,0,0.85)] max-h-[85vh] overflow-hidden flex flex-col backdrop-blur-2xl">
+
+            {!isAdminAuthenticated ? (
+              <form onSubmit={handleAdminLogin} className="flex flex-col items-center justify-center py-16 max-w-sm mx-auto w-full text-center">
+                <LockIcon className="w-12 h-12 text-indigo-400 mb-6 animate-pulse" />
+                <h3 className="text-lg md:text-xl font-light tracking-widest text-white/95 mb-1 font-artistic">
+                  CORE MANAGEMENT SYSTEM
+                </h3>
+                <p className="text-[10px] tracking-[0.2em] text-white/30 uppercase mb-8 font-artistic">
+                  请输入管理员密码以进入画廊总控
+                </p>
+                <div className="w-full space-y-4 mb-6">
+                  <input
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => {
+                      setAdminPassword(e.target.value);
+                      setLoginError(false);
+                    }}
+                    placeholder="输入管理员密码"
+                    className={`w-full bg-white/[0.04] text-center text-sm text-white border rounded-lg py-3 px-4 outline-none transition-all duration-[600ms] ${
+                      loginError ? 'border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.15)]' : 'border-white/10 focus:border-indigo-500/40'
+                    }`}
+                  />
+                  {loginError && <p className="text-[9px] tracking-widest text-red-400/80 uppercase">密码错误，身份无法识别</p>}
+                </div>
+                <div className="flex gap-4 w-full">
+                  <button type="button" onClick={() => setIsAdminOpen(false)} className="flex-1 bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/15 active:scale-95 text-[10px] tracking-widest py-3 rounded-lg font-light transition-all">取消</button>
+                  <button type="submit" className="flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-[10px] tracking-widest py-3 rounded-lg font-light transition-all text-white">认证</button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex flex-col h-full overflow-hidden select-text">
+                <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-6 flex-shrink-0">
+                  <div>
+                    <h3 className="text-base md:text-lg font-light tracking-widest text-white font-artistic">画廊多维控制台 (KTarch)</h3>
+                    <p className="text-[9px] tracking-widest text-white/30 uppercase font-artistic">PERSISTENCE CLOUD CONFIGURATION</p>
+                  </div>
+                  <button onClick={handleAdminLogout} className="px-4 py-1.5 bg-red-950/40 hover:bg-red-950/80 border border-red-500/20 rounded-full text-[9px] tracking-widest text-red-300 font-light transition-all shrink-0">退出登录</button>
+                </div>
+
+                <div className="flex gap-2 mb-6 border-b border-white/5 pb-3 overflow-x-auto select-none flex-shrink-0">
+                  {[
+                    { id: 'gallery', label: '核心相册 (Core Gallery)' },
+                    { id: 'collection', label: '碎刻相册 (Fragments)' },
+                    { id: 'guestbook', label: '留言审核 (Guestbook)' },
+                    { id: 'playlist', label: '乐轨列表 (BGM Tracks)' }
+                  ].map(tab => (
+                    <button key={tab.id} onClick={() => { setAdminTab(tab.id); setEditingItemId(null); }}
+                      className={`px-4 py-1.5 rounded-full text-[9px] tracking-widest font-light transition-all shrink-0 border ${
+                        adminTab === tab.id ? 'bg-indigo-600/20 border-indigo-500/50 text-white shadow-lg' : 'border-transparent text-white/50 hover:text-white/85'
+                      }`}>
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex-1 overflow-y-auto pr-2 story-scrollbar space-y-6">
+                  {adminTab === 'gallery' && (
+                    <div className="space-y-4 font-ui">
+                      {galleryItems.map(item => (
+                        <div key={item.id} className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start">
+                          <img src={item.image} className="w-24 aspect-[16/10] object-cover rounded border border-white/10" alt="" />
+                          <div className="flex-1 w-full">
+                            {editingItemId === item.id ? (
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <input type="text" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} placeholder="主标题" className="bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white" />
+                                  <input type="text" value={editForm.subtitle} onChange={(e) => setEditForm({ ...editForm, subtitle: e.target.value })} placeholder="副标题" className="bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white" />
+                                </div>
+                                <input type="text" value={editForm.image} onChange={(e) => setEditForm({ ...editForm, image: e.target.value })} placeholder="图片链接 URL (粘贴你的摄影作品链接)" className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white" />
+                                <textarea value={editForm.desc} onChange={(e) => setEditForm({ ...editForm, desc: e.target.value })} placeholder="细节描述" rows="2" className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white resize-none" />
+                                <div className="flex gap-2 justify-end">
+                                  <button onClick={() => setEditingItemId(null)} className="px-3 py-1 bg-white/5 text-[9px] rounded text-white/70 hover:bg-white/10">取消</button>
+                                  <button onClick={() => saveGalleryEdit(item.id)} className="px-3 py-1 bg-indigo-600 text-[9px] rounded text-white hover:bg-indigo-500">保存修改</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <h4 className="text-sm font-light text-white font-artistic">{item.title} <span className="text-[10px] text-white/30 ml-2 font-ui">#{item.id}</span></h4>
+                                    <span className="text-[8px] text-indigo-400 tracking-wider font-light uppercase font-artistic">{item.subtitle}</span>
+                                  </div>
+                                  <button onClick={() => startEditing(item)} className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded flex items-center gap-1 text-[9px] text-white/70 hover:text-white select-none">
+                                    <EditIcon className="w-3 h-3" /><span>编辑</span>
+                                  </button>
+                                </div>
+                                <p className="text-xs text-white/55 font-light line-clamp-2 mb-1">{item.desc}</p>
+                                <span className="text-[8px] text-white/20 select-all font-mono break-all">{item.image}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {adminTab === 'collection' && (
+                    <div className="space-y-4">
+                      <div className="flex justify-end select-none">
+                        <button onClick={addNewCollectionPhoto} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-[9px] tracking-widest rounded-lg flex items-center gap-1.5 transition-all text-white">
+                          <PlusIcon className="w-3.5 h-3.5" /><span>新增相片瞬间</span>
+                        </button>
+                      </div>
+                      <div className="space-y-4">
+                        {collectionPhotos.map(photo => (
+                          <div key={photo.id} className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start font-ui">
+                            <img src={photo.image} className="w-24 aspect-[4/3] object-cover rounded border border-white/10" alt="" />
+                            <div className="flex-1 w-full">
+                              {editingItemId === photo.id ? (
+                                <div className="space-y-3">
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <input type="text" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} placeholder="主标题" className="bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white" />
+                                    <input type="text" value={editForm.subtitle} onChange={(e) => setEditForm({ ...editForm, subtitle: e.target.value })} placeholder="副标题" className="bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white" />
+                                    <select value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} className="bg-zinc-900 border border-white/10 text-xs p-2 rounded text-white outline-none">
+                                      <option value="LANDSCAPE">LANDSCAPE (风景)</option>
+                                      <option value="CITY">CITY (都市)</option>
+                                      <option value="DREAM">DREAM (梦境)</option>
+                                    </select>
+                                  </div>
+                                  <input type="text" value={editForm.image} onChange={(e) => setEditForm({ ...editForm, image: e.target.value })} placeholder="图片链接 URL" className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white" />
+                                  <textarea value={editForm.story} onChange={(e) => setEditForm({ ...editForm, story: e.target.value })} placeholder="关于这幅图的微叙事" rows="2" className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white resize-none" />
+                                  <div className="flex gap-2 justify-end">
+                                    <button onClick={() => setEditingItemId(null)} className="px-3 py-1 bg-white/5 text-[9px] rounded text-white/70 hover:bg-white/10">取消</button>
+                                    <button onClick={() => saveCollectionEdit(photo.id)} className="px-3 py-1 bg-indigo-600 text-[9px] rounded text-white hover:bg-indigo-500">保存修改</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                      <h4 className="text-sm font-light text-white font-artistic">{photo.title} <span className="text-[10px] text-white/30 ml-2 font-ui font-light">#{photo.id}</span></h4>
+                                      <span className="inline-block px-2 py-0.5 bg-indigo-950/40 text-[8px] border border-indigo-500/20 text-indigo-300 rounded uppercase tracking-wider font-light mt-1 font-artistic">{photo.category} · {photo.subtitle}</span>
+                                    </div>
+                                    <div className="flex gap-2 select-none">
+                                      <button onClick={() => startEditing(photo)} className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded flex items-center gap-1 text-[9px] text-white/70 hover:text-white"><EditIcon className="w-3 h-3" /><span>编辑</span></button>
+                                      <button onClick={() => deleteCollectionPhoto(photo.id)} className="p-1.5 bg-red-950/30 hover:bg-red-950/60 border border-red-500/20 rounded flex items-center gap-1 text-[9px] text-red-300/80 hover:text-red-300"><TrashIcon className="w-3 h-3" /></button>
+                                    </div>
+                                  </div>
+                                  <p className="text-xs text-white/55 font-light line-clamp-2 mb-1 italic">"{photo.story}"</p>
+                                  <span className="text-[8px] text-white/20 select-all font-mono break-all">{photo.image}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {adminTab === 'guestbook' && (
+                    <div className="space-y-4">
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 text-xs font-light tracking-wide text-white/40 mb-2 select-none">以下是所有历史留言印记，您可以直接一键清洗不合规留言。</div>
+                      {messages.length === 0 ? (
+                        <div className="text-center py-12 text-xs font-light text-white/20 tracking-wider">暂无留言可以审核</div>
+                      ) : (
+                        messages.map(msg => (
+                          <div key={msg.id} className="bg-white/[0.02] border border-white/5 p-4 rounded-xl flex items-start justify-between gap-4 font-ui">
+                            <div className="flex-1">
+                              <div className="flex gap-3 items-center mb-1">
+                                <span className="text-xs font-light text-indigo-300 font-artistic">{msg.name}</span>
+                                <span className="text-[8px] text-white/20 font-mono">{msg.time}</span>
+                              </div>
+                              <p className="text-xs font-light text-white/75">{msg.text}</p>
+                            </div>
+                            <button onClick={() => deleteGuestMessage(msg.id)} className="p-2 bg-red-950/20 hover:bg-red-950/50 border border-red-500/10 hover:border-red-500/30 rounded text-red-300 hover:text-red-200 transition-all select-none" title="删除此言论"><TrashIcon className="w-3.5 h-3.5" /></button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+
+                  {adminTab === 'playlist' && (
+                    <div className="space-y-6">
+                      <form onSubmit={addNewSong} className="bg-white/[0.015] border border-white/5 rounded-xl p-4 space-y-4">
+                        <span className="text-[10px] tracking-widest text-indigo-400 font-light block uppercase font-artistic">新增自选音轨</span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <input type="text" value={newSongTitle} onChange={(e) => setNewSongTitle(e.target.value)} placeholder="乐轨显示名称" className="bg-white/[0.03] border border-white/10 text-xs p-2.5 rounded text-white outline-none focus:border-indigo-500/40" />
+                          <input type="text" value={newSongUrl} onChange={(e) => setNewSongUrl(e.target.value)} placeholder="音频源 Mp3 链接地址" className="bg-white/[0.03] border border-white/10 text-xs p-2.5 rounded text-white outline-none focus:border-indigo-500/40" />
+                        </div>
+                        <div className="flex justify-end select-none">
+                          <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-[9px] tracking-widest rounded-lg flex items-center gap-1.5 transition-all text-white"><PlusIcon className="w-3.5 h-3.5" /><span>载入播放队列</span></button>
+                        </div>
+                      </form>
+                      <div className="space-y-3 font-ui">
+                        <span className="text-[10px] tracking-widest text-white/40 font-light block uppercase font-artistic font-light">乐轨队列 ({songs.length} 首)</span>
+                        {songs.map((song, idx) => (
+                          <div key={song.id} className={`p-4 rounded-xl border flex items-center justify-between gap-4 transition-all ${activeSongIndex === idx ? 'bg-indigo-600/[0.08] border-indigo-500/30' : 'bg-white/[0.01] border-white/5 hover:border-white/10'}`}>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-light text-white font-artistic">{song.title}</span>
+                                {activeSongIndex === idx && <span className="text-[7px] bg-indigo-600 text-white border border-indigo-500 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-light animate-pulse">ON AIR</span>}
+                              </div>
+                              <span className="text-[8px] text-white/20 select-all font-mono break-all">{song.url}</span>
+                            </div>
+                            <div className="flex items-center gap-2 select-none">
+                              <button onClick={() => setActiveSongIndex(idx)} className={`px-3 py-1 text-[9px] tracking-wider rounded font-light border transition-all ${activeSongIndex === idx ? 'bg-transparent border-indigo-400 text-indigo-300' : 'bg-white/5 border-white/10 hover:bg-white/10 text-white/80'}`}>
+                                {activeSongIndex === idx ? '正在播出' : '点播这首'}
+                              </button>
+                              <button onClick={() => deleteSong(song.id)} disabled={songs.length <= 1} className="p-1.5 bg-red-950/20 hover:bg-red-950/50 border border-red-500/10 hover:border-red-500/30 rounded text-red-300 disabled:opacity-30 disabled:cursor-not-allowed"><TrashIcon className="w-3.5 h-3.5" /></button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ================= 8. 页脚 ================= */}
+      <footer className="bg-[#03050a] py-16 border-t border-white/[0.03] text-center font-artistic" ref={addToRefs}>
         <div className="flex justify-center gap-6 mb-4 text-white/30 text-xs">
           <ImageIcon className="w-4 h-4 hover:text-white transition-colors cursor-pointer" />
           <FilmIcon className="w-4 h-4 hover:text-white transition-colors cursor-pointer" />
           <CameraIcon className="w-4 h-4 hover:text-white transition-colors cursor-pointer" />
         </div>
+        <div className="mb-4 font-ui">
+          <button onClick={() => setIsAdminOpen(true)} className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/[0.02] border border-white/5 hover:bg-white/[0.08] hover:border-white/10 text-[8px] text-white/40 hover:text-white/80 rounded transition-all tracking-widest uppercase select-none">
+            <SettingsIcon className="w-2.5 h-2.5" />
+            <span>ADMIN PORTAL (管理中心)</span>
+          </button>
+        </div>
         <div className="text-[9px] tracking-[0.3em] text-white/30 uppercase">
-          © {new Date().getFullYear()} JINIAN. ALL RIGHTS RESERVED.
+          © {new Date().getFullYear()} KTarch. ALL RIGHTS RESERVED.
         </div>
       </footer>
     </div>
