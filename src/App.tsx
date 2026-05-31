@@ -1035,7 +1035,7 @@ export default function App() {
         <audio
           ref={audioRef}
           loop
-          src="https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=cinematic-time-lapse-115672.mp3"
+          src="/最佳损友-陈奕迅#8UDt.mp3"
         />
 
         {/* 上方微型发光提示气泡 */}
