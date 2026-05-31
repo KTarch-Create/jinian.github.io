@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { fetchMessages, saveMessages, listBackups, createBackup, getBackupContent } from './guestbook.ts';
 import { fetchTexts, saveTexts, defaultTexts } from './siteTexts.ts';
-import { hashPassword, fetchAdminConfig, saveAdminConfig, generateCode } from './adminConfig.ts';
+import { hashPassword, fetchAdminConfig, saveAdminConfig, generateCode, ADMIN_EMAIL } from './adminConfig.ts';
 import emailjs from '@emailjs/browser';
 
 // 防御性注入：显式地将 React、ReactDOM 以及 tailwind 挂载到全局 window 对象上
@@ -769,8 +769,6 @@ export default function App() {
 
   // 密码修改 & 邮箱验证状态
   const [storedPasswordHash, setStoredPasswordHash] = useState(null); // 从 GitHub 加载
-  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
-  const [securityEmail, setSecurityEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [sentCode, setSentCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -2338,15 +2336,15 @@ export default function App() {
 
                   {adminTab === 'security' && (
                     <div className="space-y-4 font-ui">
-                      {/* 使用说明 */}
+                      {/* EmailJS 配置说明 — 邮箱已锁定 */}
                       {!emailjsPublicKey && (
                         <div className="border border-amber-500/30 bg-amber-950/10 rounded-xl p-4">
                           <p className="text-[10px] text-amber-200/80 tracking-wide mb-2">
-                            需要配置 EmailJS 才能发送邮箱验证码。免费注册后链接你的 QQ 邮箱，三步完成：
+                            首次使用需要配置 EmailJS 来发送验证码到管理员邮箱 <strong className="text-white">{ADMIN_EMAIL}</strong>。
                           </p>
                           <ol className="text-[9px] text-white/50 space-y-1 mt-2 pl-4 list-decimal">
                             <li>打开 <a href="https://www.emailjs.com" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">emailjs.com</a> 免费注册</li>
-                            <li>添加 Email Service → 选 QQ 邮箱 → 填入你的 QQ 邮箱地址和 SMTP 授权码</li>
+                            <li>添加 Email Service → 选 QQ Mail → 填入 {ADMIN_EMAIL} 和 SMTP 授权码</li>
                             <li>添加 Email Template → 创建变量 <code className="text-indigo-300 bg-white/5 px-1 rounded">{'{{verification_code}}'}</code></li>
                           </ol>
                           <details className="text-[9px] text-white/40 mt-3">
@@ -2366,7 +2364,7 @@ export default function App() {
                           <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic">📧 EmailJS 配置</h4>
                           <button onClick={async () => {
                             const cfg = await fetchAdminConfig();
-                            const updated = { ...cfg, emailjsServiceId, emailjsTemplateId, emailjsPublicKey, adminEmail: securityEmail };
+                            const updated = { ...cfg, emailjsServiceId, emailjsTemplateId, emailjsPublicKey };
                             const ok = await saveAdminConfig(updated);
                             setSecurityStatus(ok ? 'saved' : 'error');
                             setSecurityMessage(ok ? '✓ 配置已保存' : '✗ 保存失败');
@@ -2375,6 +2373,7 @@ export default function App() {
                             保存配置
                           </button>
                         </div>
+                        <p className="text-[8px] text-white/30 mb-3">验证码接收邮箱已锁定：<span className="text-indigo-300">{ADMIN_EMAIL}</span></p>
                         <div className="space-y-2">
                           <div className="flex flex-col gap-1">
                             <label className="text-[9px] text-white/40">Service ID</label>
@@ -2388,10 +2387,6 @@ export default function App() {
                             <label className="text-[9px] text-white/40">Public Key (User ID)</label>
                             <input type="text" value={emailjsPublicKey} onChange={e => setEmailjsPublicKey(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="xxx" />
                           </div>
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[9px] text-white/40">管理员邮箱（接收验证码）</label>
-                            <input type="email" value={securityEmail} onChange={e => setSecurityEmail(e.target.value)} className="w-full bg-white/[0.04] border border-white/10 text-xs p-2 rounded text-white/90 outline-none focus:border-indigo-500/40" placeholder="yourname@qq.com" />
-                          </div>
                         </div>
                       </div>
 
@@ -2399,47 +2394,29 @@ export default function App() {
                       <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
                         <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">🔑 修改管理员密码</h4>
 
-                        {/* 步骤1: 发送验证码 */}
                         {!codeSent && !codeVerified && (
                           <div className="space-y-3">
-                            <p className="text-[9px] text-white/40">验证码将发送到：{securityEmail || '请先配置管理员邮箱'}</p>
-                            <button
-                              onClick={async () => {
-                                if (!securityEmail || !emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey) {
-                                  setSecurityStatus('error');
-                                  setSecurityMessage('✗ 请先完善 EmailJS 配置和管理员邮箱');
-                                  setTimeout(() => setSecurityStatus(''), 3000);
-                                  return;
-                                }
-                                setSecurityStatus('sending');
-                                const code = generateCode();
-                                try {
-                                  await emailjs.send(emailjsServiceId, emailjsTemplateId, {
-                                    to_email: securityEmail,
-                                    verification_code: code,
-                                  }, emailjsPublicKey);
-                                  setSentCode(code);
-                                  setCodeSent(true);
-                                  setSecurityStatus('sent');
-                                  setSecurityMessage('✓ 验证码已发送到邮箱，请查收');
-                                  setTimeout(() => setSecurityStatus(''), 3000);
-                                } catch (err) {
-                                  setSecurityStatus('error');
-                                  setSecurityMessage('✗ 发送失败：' + (err?.text || '请检查配置'));
-                                }
-                              }}
-                              disabled={securityStatus === 'sending'}
-                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
-                            >
+                            <p className="text-[9px] text-white/40">验证码将发送到绑定的管理员邮箱：{ADMIN_EMAIL}</p>
+                            <button onClick={async () => {
+                              if (!emailjsServiceId || !emailjsTemplateId || !emailjsPublicKey) {
+                                setSecurityStatus('error'); setSecurityMessage('✗ 请先完善上方的 EmailJS 配置'); setTimeout(() => setSecurityStatus(''), 3000); return;
+                              }
+                              setSecurityStatus('sending');
+                              const code = generateCode();
+                              try {
+                                await emailjs.send(emailjsServiceId, emailjsTemplateId, { to_email: ADMIN_EMAIL, verification_code: code }, emailjsPublicKey);
+                                setSentCode(code); setCodeSent(true); setSecurityStatus('sent'); setSecurityMessage('✓ 验证码已发送到邮箱，请查收');
+                                setTimeout(() => setSecurityStatus(''), 3000);
+                              } catch (err) { setSecurityStatus('error'); setSecurityMessage('✗ 发送失败：' + (err?.text || '请检查配置')); }
+                            }} disabled={securityStatus === 'sending'} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none">
                               {securityStatus === 'sending' ? '发送中...' : '发送验证码'}
                             </button>
                           </div>
                         )}
 
-                        {/* 步骤2: 输入验证码 */}
                         {codeSent && !codeVerified && (
                           <div className="space-y-3">
-                            <p className="text-[9px] text-green-400">✓ 验证码已发送至 {securityEmail}</p>
+                            <p className="text-[9px] text-green-400">✓ 验证码已发送至 {ADMIN_EMAIL}</p>
                             <div className="flex gap-2 items-end">
                               <div className="flex-1 flex flex-col gap-1">
                                 <label className="text-[9px] text-white/40">输入 6 位验证码</label>
@@ -2454,7 +2431,6 @@ export default function App() {
                           </div>
                         )}
 
-                        {/* 步骤3: 设置新密码 */}
                         {codeVerified && (
                           <div className="space-y-3 border-t border-white/5 pt-4">
                             <p className="text-[9px] text-green-400">✓ 邮箱验证通过，请输入新密码</p>
@@ -2475,12 +2451,9 @@ export default function App() {
                               setSecurityStatus('sending');
                               const hash = await hashPassword(newPassword);
                               const cfg = await fetchAdminConfig();
-                              const updated = { ...cfg, passwordHash: hash, emailjsServiceId, emailjsTemplateId, emailjsPublicKey, adminEmail: securityEmail };
+                              const updated = { ...cfg, passwordHash: hash, emailjsServiceId, emailjsTemplateId, emailjsPublicKey };
                               const ok = await saveAdminConfig(updated);
-                              if (ok) {
-                                setStoredPasswordHash(hash);
-                                setSecurityStatus('saved');
-                                setSecurityMessage('✓ 密码已成功修改！');
+                              if (ok) { setStoredPasswordHash(hash); setSecurityStatus('saved'); setSecurityMessage('✓ 密码已成功修改！');
                                 setNewPassword(''); setNewPasswordConfirm(''); setVerificationCode(''); setSentCode(''); setCodeSent(false); setCodeVerified(false);
                               } else { setSecurityStatus('error'); setSecurityMessage('✗ 保存失败'); }
                               setTimeout(() => setSecurityStatus(''), 4000);

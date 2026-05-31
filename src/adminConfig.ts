@@ -1,6 +1,8 @@
 // 管理员安全配置 - GitHub API
 // 存储密码哈希和 EmailJS 配置
 
+export const ADMIN_EMAIL = '194085683@qq.com';
+
 const GITHUB_OWNER = 'KTarch-Create';
 const GITHUB_REPO = 'jinian.github.io';
 const CONFIG_PATH = 'admin-config.json';
