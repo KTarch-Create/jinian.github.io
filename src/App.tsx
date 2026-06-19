@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { fetchMessages, saveMessages, listBackups, createBackup, getBackupContent } from './guestbook.ts';
 import { fetchTexts, saveTexts, defaultTexts } from './siteTexts.ts';
 import { hashPassword, fetchAdminConfig, saveAdminConfig, generateCode, ADMIN_EMAIL } from './adminConfig.ts';
 import emailjs from '@emailjs/browser';
@@ -375,6 +374,164 @@ function ParticleLyrics({ text }) {
   );
 }
 
+// ================= 两弹一星故事数据 =================
+const heroStories = [
+  {
+    id: 1,
+    title: '"两弹一星"精神',
+    subtitle: '自主创新的坚定信念',
+    paragraphs: [
+      `1999年9月18日，在庆祝中华人民共和国成立50周年之际，中共中央、国务院及中央军委隆重表彰了为研制“两弹一星”作出突出贡献的23位科技专家，并首次将这一伟大壮举中孕育的精神概括为“两弹一星”精神。`,
+      "这一精神诞生于新中国面临严峻国际形势的特殊时期，体现了中华民族在极端困难条件下自主创新的坚定信念。"
+    ]
+  },
+  {
+    id: 2,
+    title: '"承书风范"三次"我愿意"',
+    subtitle: '王承书 — 淡泊名利，甘为人梯',
+    paragraphs: [
+      "王承书（1912-1994），我国稀有气体扩散法分离铀同位素理论的奠基者。",
+      "1956年，她放弃美国优越条件，冲破重重阻挠回到祖国。1958年，面对苏联专家断言\"中国没人懂分离铀同位素理论\"，钱三强问她能否搞这个项目？她毅然回答：\"我愿意。\"从此隐姓埋名投身核工业。",
+      "1961年被调入核武器研究所，面对更艰巨的任务，她再次回答：\"我愿意。\"1964年，在原子弹爆炸前夕，她承担了核心数据计算的\"收尾\"工作，第三次回答：\"我愿意。\"",
+      "晚年身患多病，视力衰退，她仍用放大镜把字迹描深审阅论文。遗嘱中将毕生积蓄10万元全部捐出，遗体捐献给医学研究。"
+    ]
+  },
+  {
+    id: 3,
+    title: '"粉身碎骨"不是形容词',
+    subtitle: '魏世杰、王淦昌 — 用血肉铸核盾',
+    paragraphs: [
+      "在青海金银滩221厂（西北核武器研制基地）那片被风雪肆虐的荒原上，\"粉身碎骨\"从来都不是文学作品中用来渲染悲壮的修辞，而是每一次核试验中必须直面的真实梦魇。",
+      "那是一个没有现代精密远程遥控技术的年代，为了获取核爆炸瞬间最核心的物理参数，科研人员必须深入最危险的爆心区域。王淦昌等科学家总是坚持亲临一线指挥，甚至亲自参与回收实验装置。",
+      "他们深知，一旦操作稍有差池，等待他们的就是瞬间的气化与毁灭。但在那个为了国家挺起脊梁的特殊岁月里，他们早已将个人生死置之度外。"
+    ]
+  },
+  {
+    id: 4,
+    title: '用血肉之躯护住绝密资料',
+    subtitle: '郭永怀 — 唯一烈士身份的功勋科学家',
+    paragraphs: [
+      "郭永怀（力学家、应用数学家）。1968年12月5日，他从青海基地出差返回，飞机在降落时发生事故坠毁。",
+      "救援人员清理现场时，发现郭永怀和他的警卫员紧紧抱在一起。两具烧焦的遗体中间，那个装有绝密科研数据的公文包完好无损。",
+      "他是唯一一位以烈士身份被追授\"两弹一星\"功勋奖章的科学家，用生命诠释了\"事业高于一切\"的核工业精神。"
+    ]
+  },
+  {
+    id: 5,
+    title: '戈壁滩上的"百日会战"',
+    subtitle: '于敏 — 氢弹突破中的幽默与坚韧',
+    paragraphs: [
+      "1965年，于敏带领团队在上海展开了氢弹原理的验证计算。当时我国仅有两台大型电子计算机，团队利用有限资源，进行了持续100个昼夜的高强度计算，史称\"百日会战\"。",
+      "在这100天里，科研人员轮班倒，机器不停，人也不停。由于长期处于高度紧张和高压的计算状态，许多人的头发大把脱落。",
+      "在突破成功的庆祝会上，于敏讲了一个\"三个头发的人去理发\"的笑话，因为当时在场的科研人员大多已经秃了。这一幕成为艰苦岁月中最动人的革命乐观主义注脚。"
+    ]
+  },
+  {
+    id: 6,
+    title: '80度开水与夹生馒头',
+    subtitle: '青海金银滩 — 生理极限下的坚守',
+    paragraphs: [
+      "青海金银滩221厂平均海拔高达3200米。由于气压低，水的沸点被强行拉低到了80多度——无论火烧得多旺，水温永远达不到100度。",
+      "在这个温度下，馒头常常是外面软、里面夹生。晚上睡觉时常因缺氧被憋醒，必须坐起来大口喘气。白天工作时，稍微走快几步就会心跳加速。",
+      "在基地初创的严冬，气温低至零下三四十度。许多建设者没有营房，只能在冻土上挖坑搭起\"地窝子\"。早上醒来，眉毛和胡须上结满了白霜。春天狂风卷着黄沙，吃饭时\"一口饭，半口沙\"，但没有人抱怨。"
+    ]
+  },
+  {
+    id: 7,
+    title: '10元奖金与"失踪的人"',
+    subtitle: '干惊天动地事，做隐姓埋名人',
+    paragraphs: [
+      "1985年，原子弹项目获得国家科技进步特等奖，奖金总额为1万元（当时是巨款）。但参与研制的人员多达上万人，经过层层分配，绝大多数基层科研人员只分到了10元钱。",
+      "为了保密，许多科研人员在20多年里音讯全无。老家的父母以为儿子早已牺牲，甚至收到了\"烈士通知书\"。"
+    ]
+  },
+  {
+    id: 8,
+    title: '全国大协作的"651"计划',
+    subtitle: '东方红一号 — 集中力量办大事',
+    paragraphs: [
+      "1965年，代号\"651\"的人造卫星研制计划启动（后来的\"东方红一号\"）。在西方封锁下，中央特批2亿元专款。",
+      "全国29个省市自治区、1000多家单位、数十万科技人员和民兵参与。各地动员了60多万民兵日夜守护通讯线路。这是社会主义制度\"集中力量办大事\"优势的极致体现。"
+    ]
+  },
+  {
+    id: 9,
+    title: '赫鲁晓夫的断言与"争气弹"',
+    subtitle: '五年磨一弹，粉碎不可能',
+    paragraphs: [
+      "1959年6月，苏联领导人赫鲁晓夫在撤走专家前曾傲慢地断言：\"离开我们，你们20年也造不出原子弹。\"",
+      "中国科研人员顶着三年困难时期的饥饿和浮肿，没有计算机，就用算盘和计算尺进行理论计算。",
+      "1964年10月16日，中国第一颗原子弹成功爆炸，仅仅用了5年时间。这颗原子弹被亲切地称为\"争气弹\"。"
+    ]
+  },
+  {
+    id: 10,
+    title: '跨越时代的"精神基因"传承',
+    subtitle: '从两弹一星到华龙一号',
+    paragraphs: [
+      "过去：老一辈在戈壁滩住帐篷、喝苦水，用算盘计算核数据。",
+      "现在：新一代核工业人邢继（\"华龙一号\"总设计师）带领团队打造了具有完全自主知识产权的三代核电技术；徐銤院士坚守半个世纪，实现了中国实验快堆的成功并网发电。",
+      "从\"两弹一星\"到\"华龙一号\"，变的是技术水平和硬件设施，不变的是\"事业高于一切、责任重于一切、严细融入一切、进取成就一切\"的核工业精神。"
+    ]
+  }
+];
+
+// ================= 两弹一星故事卡片组件 =================
+function StoryCard({ story, isExpanded, onToggle }) {
+  return (
+    <div
+      className={`group bg-white/[0.015] backdrop-blur-md border rounded-xl transition-all duration-[800ms] cursor-pointer overflow-hidden ${
+        isExpanded
+          ? 'border-indigo-500/40 shadow-[0_8px_32px_rgba(99,102,241,0.08)]'
+          : 'border-white/5 hover:border-white/15 hover:bg-white/[0.03]'
+      }`}
+      onClick={onToggle}
+    >
+      <div className="p-4 md:p-5">
+        <div className="flex items-center gap-3 mb-2">
+          <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-medium shrink-0 transition-all duration-500 ${
+            isExpanded ? 'bg-indigo-600 text-white' : 'bg-white/[0.05] text-white/50 border border-white/10'
+          }`}>
+            {story.id}
+          </span>
+          <div className="flex-1 min-w-0">
+            <h3 className={`text-sm md:text-base font-light tracking-wider transition-colors duration-500 ${
+              isExpanded ? 'text-indigo-200' : 'text-white/90'
+            }`}>
+              {story.title}
+            </h3>
+            <p className="text-[9px] text-white/40 font-light tracking-wide truncate font-ui">
+              {story.subtitle}
+            </p>
+          </div>
+          <svg
+            className={`w-4 h-4 text-white/30 shrink-0 transition-transform duration-500 ${
+              isExpanded ? 'rotate-180' : ''
+            }`}
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+
+        <div
+          className={`transition-all duration-[800ms] overflow-hidden ${
+            isExpanded ? 'max-h-[2000px] opacity-100 mt-3' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="space-y-3 border-t border-white/[0.05] pt-3 font-ui">
+            {story.paragraphs.map((p, i) => (
+              <p key={i} className="text-xs md:text-sm font-light text-white/60 leading-relaxed tracking-wide">
+                {p}
+              </p>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ================= 文本编辑器辅助组件 =================
 function TextEditRow({ label, value, onChange, multiline }) {
   return (
@@ -411,7 +568,7 @@ export default function App() {
   const [adminPassword, setAdminPassword] = useState('');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [loginError, setLoginError] = useState(false);
-  const [adminTab, setAdminTab] = useState('gallery'); // 'gallery' | 'collection' | 'guestbook' | 'playlist'
+  const [adminTab, setAdminTab] = useState('gallery'); // 'gallery' | 'collection' | 'playlist'
 
   // 编辑项目暂存状态
   const [editingItemId, setEditingItemId] = useState(null);
@@ -750,17 +907,10 @@ export default function App() {
 
   const [activePhotoCategory, setActivePhotoCategory] = useState('ALL');
 
-  // 留言板状态
-  const [messages, setMessages] = useState([]);
-  const [nickname, setNickname] = useState('');
-  const [content, setContent] = useState('');
-  const [formError, setFormError] = useState({ name: false, text: false });
-
-  // 留言板备份 & 回到顶部状态
-  const [backups, setBackups] = useState([]);
-  const [backupStatus, setBackupStatus] = useState(''); // '' | 'loading' | 'created' | 'no_changes' | 'failed'
-  const [restoreConfirm, setRestoreConfirm] = useState(null); // { name, messages, time } | null
   const [showBackToTop, setShowBackToTop] = useState(false);
+
+  // 两弹一星故事卡片展开状态
+  const [expandedCardId, setExpandedCardId] = useState(1);
 
   // 页面文本配置 & 公告 & 文本编辑状态
   const [siteTexts, setSiteTexts] = useState(defaultTexts);
@@ -823,37 +973,6 @@ export default function App() {
       }
     }
 
-    // 从 GitHub 加载留言（所有用户共享）
-    fetchMessages().then(msgs => {
-      if (msgs.length > 0) {
-        setMessages(msgs);
-      } else {
-        const defaultMsgs = [
-          {
-            id: 101,
-            name: "季风过境",
-            text: "静静地看着雪花在雪山之巅上飞舞，听着轻柔的音乐，那一刻时空好像完全凝固了。摄影和音乐果然是人类打捞记忆最温柔的网，KTarch，期待未来更多的闪光！",
-            time: "2026-05-24 19:42"
-          },
-          {
-            id: 102,
-            name: "未完待续",
-            text: "在钢铁森林里生活久了，总是忘记倾听自己灵魂深处的声音。谢谢这些细腻的镜头瞬间，在这个寒冷冬天里给我带来了一份难得的温暖。",
-            time: "2026-05-28 09:15"
-          }
-        ];
-        setMessages(defaultMsgs);
-        saveMessages(defaultMsgs);
-      }
-    })
-
-    // 每 30 秒自动刷新留言（其他用户新留言会自动出现）
-    const refreshInterval = setInterval(() => {
-      fetchMessages().then(msgs => {
-        if (msgs.length > 0) setMessages(msgs);
-      });
-    }, 30000);
-
     // 从 GitHub 加载页面文本配置
     fetchTexts().then(texts => {
       if (texts) setSiteTexts(texts);
@@ -890,7 +1009,6 @@ export default function App() {
     return () => {
       observer.disconnect();
       clearTimeout(timer);
-      clearInterval(refreshInterval);
       clearInterval(textRefreshInterval);
     };
   }, []);
@@ -945,13 +1063,6 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 进入留言审核标签时自动加载备份列表
-  useEffect(() => {
-    if (isAdminAuthenticated && adminTab === 'guestbook') {
-      listBackups().then(setBackups);
-    }
-  }, [isAdminAuthenticated, adminTab]);
-
   // 计算当前正在播出的歌词内容
   const getActiveLyricText = () => {
     const currentSongId = songs[activeSongIndex]?.id;
@@ -981,42 +1092,6 @@ export default function App() {
           setIsPlaying(false);
         });
     }
-  };
-
-  // 提交留言处理
-  const handleMessageSubmit = (e) => {
-    e.preventDefault();
-
-    const hasNameError = !nickname.trim();
-    const hasTextError = !content.trim();
-
-    setFormError({ name: hasNameError, text: hasTextError });
-
-    if (hasNameError || hasTextError) return;
-
-    const formatTime = () => {
-      const now = new Date();
-      const pad = (num) => String(num).padStart(2, '0');
-      return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    };
-
-    const newMsg = {
-      id: Date.now(),
-      name: nickname.trim(),
-      text: content.trim(),
-      time: formatTime()
-    };
-
-    const updatedMsgs = [newMsg, ...messages];
-    setMessages(updatedMsgs);
-    // 异步保存到 GitHub，失败时不影响本地显示
-    saveMessages(updatedMsgs).then(ok => {
-      if (!ok) console.warn('留言已本地保存，但同步到 GitHub 失败');
-    });
-
-    setNickname('');
-    setContent('');
-    setFormError({ name: false, text: false });
   };
 
   // 过滤后的图片集
@@ -1147,12 +1222,6 @@ export default function App() {
     const updated = collectionPhotos.filter(item => item.id !== id);
     setCollectionPhotos(updated);
     localStorage.setItem('kt_collection_photos', JSON.stringify(updated));
-  };
-
-  const deleteGuestMessage = (id) => {
-    const updated = messages.filter(item => item.id !== id);
-    setMessages(updated);
-    saveMessages(updated);
   };
 
   const [newSongTitle, setNewSongTitle] = useState('');
@@ -1589,90 +1658,29 @@ export default function App() {
         </div>
       )}
 
-      {/* ================= 4. {siteTexts.guestbookSection.title}区 ================= */}
+      {/* ================= 4. 两弹一星精神传承 ================= */}
       <section
         ref={addToRefs}
-        className="relative z-20 bg-[#03050a] py-24 px-6 md:px-12 max-w-[1000px] mx-auto reveal-section font-artistic"
+        className="relative z-20 bg-[#03050a] py-24 px-6 md:px-12 max-w-[1200px] mx-auto reveal-section font-artistic"
       >
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/5 border border-white/5">
-            <MessageSquareIcon className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="text-[9px] tracking-[0.3em] text-white/60">{siteTexts.guestbookSection.label}</span>
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-900/50 text-indigo-400 text-[10px] font-light">☄</span>
+            <span className="text-[9px] tracking-[0.3em] text-white/60">{siteTexts.heroSection.label}</span>
           </div>
-          <h2 className="text-2xl md:text-4xl font-light tracking-[0.2em] text-white/90">{siteTexts.guestbookSection.title}</h2>
-          <p className="text-xs md:text-sm font-light text-white/40 mt-3 tracking-wider">{siteTexts.guestbookSection.subtitle}</p>
+          <h2 className="text-2xl md:text-4xl font-light tracking-[0.2em] text-white/90">{siteTexts.heroSection.title}</h2>
+          <p className="text-xs md:text-sm font-light text-white/40 mt-3 tracking-wider">{siteTexts.heroSection.subtitle}</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <form
-            onSubmit={handleMessageSubmit}
-            className="lg:col-span-5 bg-white/[0.015] backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-[0_16px_48px_rgba(0,0,0,0.5)] flex flex-col gap-5 font-ui"
-          >
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] tracking-[0.2em] font-light text-white/50 uppercase font-artistic">署名 SIGNATURE</label>
-              <input
-                type="text"
-                maxLength="12"
-                value={nickname}
-                onChange={(e) => {
-                  setNickname(e.target.value);
-                  if (e.target.value.trim()) setFormError(prev => ({ ...prev, name: false }));
-                }}
-                placeholder="在此填入名字..."
-                className={`w-full bg-white/[0.03] text-sm text-white/90 placeholder:text-white/20 font-light border rounded-lg py-2.5 px-4 outline-none transition-all duration-[750ms] focus:bg-white/[0.06] ${
-                  formError.name ? 'border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.15)]' : 'border-white/10 focus:border-indigo-500/40'
-                }`}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] tracking-[0.2em] font-light text-white/50 uppercase font-artistic">话语 SPARKS</label>
-              <textarea
-                rows="4"
-                maxLength="200"
-                value={content}
-                onChange={(e) => {
-                  setContent(e.target.value);
-                  if (e.target.value.trim()) setFormError(prev => ({ ...prev, text: false }));
-                }}
-                placeholder="留下此时此刻你的心境..."
-                className={`w-full bg-white/[0.03] text-sm text-white/90 placeholder:text-white/20 font-light border rounded-lg py-2.5 px-4 outline-none transition-all duration-[750ms] resize-none focus:bg-white/[0.06] ${
-                  formError.text ? 'border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.15)]' : 'border-white/10 focus:border-indigo-500/40'
-                }`}
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="mt-2 w-full bg-white/[0.05] hover:bg-white/[0.12] border border-white/10 hover:border-white/25 active:scale-98 transition-all duration-300 text-[10px] tracking-[0.3em] font-light text-indigo-200 hover:text-white py-3.5 rounded-lg flex items-center justify-center gap-2 select-none"
-            >
-              <SendIcon className="w-3.5 h-3.5" />
-              <span>递交光影</span>
-            </button>
-          </form>
-
-          <div className="lg:col-span-7 space-y-4 max-h-[420px] overflow-y-auto pr-2 story-scrollbar">
-            {messages.length === 0 ? (
-              <div className="h-full flex items-center justify-center py-20 text-xs font-light text-white/30 tracking-widest border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
-                暂无光影印记，期待你的首条留言
-              </div>
-            ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className="bg-white/[0.01] backdrop-blur-md border border-white/5 hover:border-white/12 p-5 rounded-xl transition-all duration-[750ms] flex flex-col gap-2 shadow-sm animate-ai-card"
-                >
-                  <div className="flex justify-between items-center border-b border-white/[0.03] pb-2 font-ui">
-                    <span className="text-xs font-light tracking-widest text-indigo-300 font-artistic">{msg.name}</span>
-                    <span className="text-[9px] font-light text-white/20">{msg.time}</span>
-                  </div>
-                  <p className="text-xs md:text-sm font-light text-white/60 leading-relaxed tracking-wide">
-                    {msg.text}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {heroStories.map((story) => (
+            <StoryCard
+              key={story.id}
+              story={story}
+              isExpanded={expandedCardId === story.id}
+              onToggle={() => setExpandedCardId(expandedCardId === story.id ? null : story.id)}
+            />
+          ))}
         </div>
       </section>
 
@@ -2005,7 +2013,6 @@ export default function App() {
                   {[
                     { id: 'gallery', label: '核心相册 (Core Gallery)' },
                     { id: 'collection', label: '碎刻相册 (Fragments)' },
-                    { id: 'guestbook', label: '留言审核 (Guestbook)' },
                     { id: 'playlist', label: '乐轨列表 (BGM Tracks)' },
                     { id: 'texts', label: '页面文本 (Text Editor)' },
                     { id: 'security', label: '安全设置 (Security)' }
@@ -2113,132 +2120,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {adminTab === 'guestbook' && (
-                    <div className="space-y-4">
-                      {/* 备份操作区 */}
-                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 font-ui">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-[10px] tracking-widest text-indigo-400 font-light uppercase font-artistic">
-                            留言板备份
-                          </span>
-                          <button
-                            onClick={async () => {
-                              setBackupStatus('loading');
-                              const result = await createBackup(messages);
-                              setBackupStatus(result.reason);
-                              if (result.ok) listBackups().then(setBackups);
-                              setTimeout(() => setBackupStatus(''), 3000);
-                            }}
-                            disabled={backupStatus === 'loading'}
-                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[9px] tracking-widest rounded-lg transition-all text-white select-none"
-                          >
-                            {backupStatus === 'loading' ? '备份中...' : '创建新备份'}
-                          </button>
-                        </div>
-                        {backupStatus === 'created' && (
-                          <p className="text-[9px] text-green-400 tracking-wide">✓ 备份已保存到 GitHub 仓库</p>
-                        )}
-                        {backupStatus === 'no_changes' && (
-                          <p className="text-[9px] text-amber-400 tracking-wide">→ 当前数据与最新备份一致，自动跳过重复备份</p>
-                        )}
-                        {backupStatus === 'failed' && (
-                          <p className="text-[9px] text-red-400 tracking-wide">✗ 备份创建失败，请重试</p>
-                        )}
-                      </div>
-
-                      {/* 恢复确认面板 */}
-                      {restoreConfirm && (
-                        <div className="border border-indigo-500/30 bg-indigo-950/20 rounded-xl p-4 space-y-3 font-ui">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="text-xs font-light text-indigo-200 font-artistic">从备份恢复留言</h4>
-                              <p className="text-[9px] text-white/40 mt-0.5">
-                                备份时间: {restoreConfirm.time} · 共 {restoreConfirm.messages.length} 条留言
-                              </p>
-                            </div>
-                            <button onClick={() => setRestoreConfirm(null)} className="text-white/40 hover:text-white p-1">
-                              <CloseIcon className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
-                          {/* 对比预览：当前 vs 备份 */}
-                          <div className="grid grid-cols-2 gap-3 text-[10px]">
-                            <div className="bg-white/[0.03] rounded-lg p-3 border border-white/5">
-                              <span className="text-white/40 block mb-1 tracking-wide">当前 ({messages.length} 条)</span>
-                              <div className="text-white/60 max-h-24 overflow-y-auto space-y-1 story-scrollbar">
-                                {messages.slice(0, 8).map(m => (
-                                  <div key={m.id} className="truncate text-[9px]">{m.name}: {m.text}</div>
-                                ))}
-                                {messages.length > 8 && <div className="text-white/20 text-[8px]">...还有 {messages.length - 8} 条</div>}
-                              </div>
-                            </div>
-                            <div className="bg-white/[0.03] rounded-lg p-3 border border-white/5">
-                              <span className="text-white/40 block mb-1 tracking-wide">备份 ({restoreConfirm.messages.length} 条)</span>
-                              <div className="text-white/60 max-h-24 overflow-y-auto space-y-1 story-scrollbar">
-                                {restoreConfirm.messages.slice(0, 8).map((m, i) => (
-                                  <div key={i} className="truncate text-[9px]">{m.name}: {m.text}</div>
-                                ))}
-                                {restoreConfirm.messages.length > 8 && <div className="text-white/20 text-[8px]">...还有 {restoreConfirm.messages.length - 8} 条</div>}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex gap-2 justify-end">
-                            <button onClick={() => setRestoreConfirm(null)} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-[9px] rounded text-white/70 select-none">取消</button>
-                            <button onClick={async () => {
-                              setMessages(restoreConfirm.messages);
-                              await saveMessages(restoreConfirm.messages);
-                              setRestoreConfirm(null);
-                            }} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-[9px] rounded text-white select-none">确认恢复</button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 历史备份列表 */}
-                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 font-ui">
-                        <span className="text-[10px] tracking-widest text-white/40 font-light uppercase font-artistic block mb-3">
-                          历史备份 ({backups.length})
-                        </span>
-                        {backups.length === 0 ? (
-                          <div className="text-center py-6 text-[9px] text-white/20 tracking-wide">暂无备份记录，点击上方按钮创建</div>
-                        ) : (
-                          <div className="space-y-2 max-h-40 overflow-y-auto story-scrollbar">
-                            {backups.map(bak => (
-                              <div key={bak.name} className="flex items-center justify-between bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-lg px-3 py-2 transition-all">
-                                <span className="text-[10px] text-white/60 tracking-wide font-mono">{bak.time}</span>
-                                <button onClick={async () => {
-                                  const msgs = await getBackupContent(bak.name);
-                                  if (msgs) setRestoreConfirm({ name: bak.name, messages: msgs, time: bak.time });
-                                }} className="px-2 py-1 bg-white/5 hover:bg-white/10 text-[8px] rounded text-white/50 hover:text-white transition-all select-none">
-                                  查看对比
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 现有留言审核 */}
-                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 text-xs font-light tracking-wide text-white/40 mb-2 select-none">以下是所有历史{siteTexts.guestbookSection.title}，您可以直接管理不合规留言。</div>
-                      {messages.length === 0 ? (
-                        <div className="text-center py-12 text-xs font-light text-white/20 tracking-wider">暂无留言可以审核</div>
-                      ) : (
-                        messages.map(msg => (
-                          <div key={msg.id} className="bg-white/[0.02] border border-white/5 p-4 rounded-xl flex items-start justify-between gap-4 font-ui">
-                            <div className="flex-1">
-                              <div className="flex gap-3 items-center mb-1">
-                                <span className="text-xs font-light text-indigo-300 font-artistic">{msg.name}</span>
-                                <span className="text-[8px] text-white/20 font-mono">{msg.time}</span>
-                              </div>
-                              <p className="text-xs font-light text-white/75">{msg.text}</p>
-                            </div>
-                            <button onClick={() => deleteGuestMessage(msg.id)} className="p-2 bg-red-950/20 hover:bg-red-950/50 border border-red-500/10 hover:border-red-500/30 rounded text-red-300 hover:text-red-200 transition-all select-none" title="删除此言论"><TrashIcon className="w-3.5 h-3.5" /></button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-
                   {adminTab === 'texts' && (
                     <div className="space-y-4 font-ui">
                       <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4 text-[10px] font-light tracking-wide text-white/40">
@@ -2290,16 +2171,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* 留言板文本 */}
-                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
-                        <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">💬 留言板 Guestbook</h4>
-                        <div className="space-y-3">
-                          <TextEditRow label="区域标签" value={siteTexts.guestbookSection.label} onChange={v => setSiteTexts(s => ({ ...s, guestbookSection: { ...s.guestbookSection, label: v } }))} />
-                          <TextEditRow label="区域标题" value={siteTexts.guestbookSection.title} onChange={v => setSiteTexts(s => ({ ...s, guestbookSection: { ...s.guestbookSection, title: v } }))} />
-                          <TextEditRow label="区域副标题" value={siteTexts.guestbookSection.subtitle} onChange={v => setSiteTexts(s => ({ ...s, guestbookSection: { ...s.guestbookSection, subtitle: v } }))} />
-                        </div>
-                      </div>
-
                       {/* STORY 文本 */}
                       <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
                         <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">📖 故事 STORY</h4>
@@ -2312,6 +2183,16 @@ export default function App() {
                           <TextEditRow label="第二章内容" value={siteTexts.storySection.chapter2Text} onChange={v => setSiteTexts(s => ({ ...s, storySection: { ...s.storySection, chapter2Text: v } }))} multiline />
                           <TextEditRow label="第三章标题" value={siteTexts.storySection.chapter3Title} onChange={v => setSiteTexts(s => ({ ...s, storySection: { ...s.storySection, chapter3Title: v } }))} />
                           <TextEditRow label="第三章内容" value={siteTexts.storySection.chapter3Text} onChange={v => setSiteTexts(s => ({ ...s, storySection: { ...s.storySection, chapter3Text: v } }))} multiline />
+                        </div>
+                      </div>
+
+                      {/* 两弹一星板块文本 */}
+                      <div className="border border-white/5 rounded-xl bg-white/[0.01] p-4">
+                        <h4 className="text-[10px] tracking-widest text-indigo-400 uppercase font-artistic mb-3">☄️ 两弹一星精神传承</h4>
+                        <div className="space-y-3">
+                          <TextEditRow label="区域标签" value={siteTexts.heroSection.label} onChange={v => setSiteTexts(s => ({ ...s, heroSection: { ...s.heroSection, label: v } }))} />
+                          <TextEditRow label="区域标题" value={siteTexts.heroSection.title} onChange={v => setSiteTexts(s => ({ ...s, heroSection: { ...s.heroSection, title: v } }))} />
+                          <TextEditRow label="区域副标题" value={siteTexts.heroSection.subtitle} onChange={v => setSiteTexts(s => ({ ...s, heroSection: { ...s.heroSection, subtitle: v } }))} />
                         </div>
                       </div>
 

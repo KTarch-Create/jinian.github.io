@@ -28,10 +28,10 @@ export const defaultTexts = {
     title: "光影碎刻",
     subtitle: "指尖轻启，拼凑往昔失散的时光拼图"
   },
-  guestbookSection: {
-    label: "GUESTBOOK",
-    title: "留言印记",
-    subtitle: "在光的尽头，留下属于你的那一帧温度"
+  heroSection: {
+    label: "HERITAGE",
+    title: "两弹一星精神传承",
+    subtitle: "干惊天动地事，做隐姓埋名人"
   },
   storySection: {
     title: "追光者的编年史：传媒中心背后的故事",
